@@ -11,16 +11,18 @@ import sys
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 
-SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(SCRIPT_DIR)
 
-PROJECTS = [
-    'cuda_experiments',
-    'pytorch_extended',
-    'udacity_cs344',
-    ]
+FOLDERS = [i for i in os.listdir(SCRIPT_DIR) if os.path.isdir(i)]
+WRAPPER_EXTENSIONS = {}
 
-WRAPPER_EXTENSIONS = {k: __import__(k + '.docker_wrapper_extensions').docker_wrapper_extensions \
-                      for k in PROJECTS}
+for f in FOLDERS:
+    try:
+        WRAPPER_EXTENSIONS[f] =  \
+            __import__(f + '.docker_wrapper_extensions').docker_wrapper_extensions
+    except ImportError as e:
+        pass
 
 def image_hash(docker_file_path):
     """Compute the hash  of the docker image based on the
@@ -48,9 +50,9 @@ def image_exists(docker_client, image_name, tag):
 
 def run(args):
     docker_client = docker.from_env()
-    docker_folder = os.path.join(SCRIPT_PATH, args.project, 'Docker')
+    docker_folder = os.path.join(SCRIPT_DIR, args.project, 'Docker')
     extension = WRAPPER_EXTENSIONS[args.project]
-    image_name = args.project
+    image_name = args.project.lower()
     hash = image_hash(docker_folder)
     logging.debug("Dir Hash: {}".format(hash))
     if not image_exists(docker_client, image_name, hash):
@@ -62,8 +64,8 @@ def run(args):
     username = getpass.getuser()
     logging.debug("uid:{}, gid:{}, username:{}".format(uid, gid, username))
     home_dir = os.path.expanduser('~')
-    src_dir = os.path.realpath(os.path.join(SCRIPT_PATH, args.project))
-    cmd = ['docker'] if args.disable_nvidia else ['nvidia-docker']
+    src_dir = os.path.realpath(os.path.join(SCRIPT_DIR, args.project))
+    cmd = ['nvidia-docker'] if args.enable_nvidia else ['docker']
     cmd += ['run', '--rm']
     if args.privileged:
         cmd += ['--privileged']
@@ -112,7 +114,8 @@ if __name__ == "__main__":
                         help='Set the logging output level. {0}'.format(_LOG_LEVEL_STRINGS))
     parser.add_argument('--prompt', action='store_true',
                         help="Get a prompt inside the container for the project")
-    parser.add_argument('--disable-nvidia', action='store_true',
+    parser.add_argument('--enable-nvidia', action='store_true',
+                        default=False,
                         help='Disable the use of nvidia-docker')
     parser.add_argument('--privileged', action='store_true',
                         help='Enable privileged mode')
