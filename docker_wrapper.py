@@ -34,9 +34,14 @@ def image_hash(docker_file_path):
 
 def build_image(docker_client, image_name, tag, docker_file_path):
     """Build the image"""
-    image, logs = docker_client.images.build(path=docker_file_path,
-                                             tag="{}:{}".format(image_name, tag))
-    print(logs)
+    cmd = [
+        'docker', 'build',
+        docker_file_path,
+        '-t', "{}:{}".format(image_name, tag)
+        ]
+    print(cmd)
+    subprocess.check_call(cmd, stdout=sys.stdout,
+                            stderr=sys.stderr)
 
 
 def image_exists(docker_client, image_name, tag):
