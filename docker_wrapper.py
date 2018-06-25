@@ -94,7 +94,7 @@ def run(args):
         ]
     if hasattr(extension, 'add_entrypoint_args'):
         extension.add_entrypoint_args(args, cmd)
-    logging.debug("Running cmd: {}".format(" ".join(cmd)))
+    logging.info("Running cmd: {}".format(" ".join(cmd)))
     subprocess.run(" ".join(cmd), stdin=sys.stdin, stdout=sys.stdout,
                    stderr=sys.stderr, check=True, shell=True)
 
