@@ -71,7 +71,7 @@ def run(args):
     home_dir = os.path.expanduser('~')
     src_dir = os.path.realpath(os.path.join(SCRIPT_DIR, args.project))
     cmd = ['nvidia-docker'] if args.enable_nvidia else ['docker']
-    cmd += ['run', '--rm']
+    cmd += ['run', '--rm', '--hostname=Docker']
     if args.privileged:
         cmd += ['--privileged']
     if args.enable_gui:
