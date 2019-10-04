@@ -86,6 +86,8 @@ def run(args):
     if args.prompt:
         cmd  += ['-t', '-i',
                  '-e', 'PROMPT=1']
+    if args.port:
+        cmd += ["-p", "{}:{}".format(args.port, args.port)]
     if hasattr(extension , 'add_docker_args'):
         extension.add_docker_args(args, cmd)
     cmd += ['-v', home_dir + ":" + home_dir,
@@ -126,6 +128,8 @@ if __name__ == "__main__":
                         help='Enable privileged mode')
     parser.add_argument('--enable-gui', action='store_true',
                         help='Enable start gui apps')
+    parser.add_argument('--port', default="",
+                        help='Port to forward from docker')
     subparsers = parser.add_subparsers(dest="project")
     subparsers.required = True
 
