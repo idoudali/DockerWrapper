@@ -1,0 +1,5 @@
+argcomplete
+checksumdir
+colorama >= 0.4.0
+docker
+typer
