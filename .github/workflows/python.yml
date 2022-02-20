@@ -1,6 +1,6 @@
 name: python
 
-on: [push, pull_request, workflow_dispatch]
+on: [pull_request, workflow_dispatch]
 
 jobs:
   tox:
@@ -18,5 +18,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install tox tox-gh-actions
+      - name: Build with tox-gh-actions
+        run: tox -e build
       - name: Test with tox
         run: tox
+      - name: Step 3 - Use the Upload Artifact GitHub Action
+        uses: actions/upload-artifact@v2
+        with:
+          name: Artifacts
+          path: dist/*
