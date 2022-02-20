@@ -20,6 +20,11 @@ class DockerImage:
         self.repo_url = ""
 
     @staticmethod
+    def _exec_cmd(cmd: List[str]) -> None:
+        logging.info(cmd)
+        subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
+
+    @staticmethod
     def folder_hash(docker_path: str) -> str:
         """Compute the hash  of the docker image based on the
         contents of the Docker folder of the project
@@ -51,8 +56,7 @@ class DockerImage:
         """Build the image"""
         tag = self.image_hash
         cmd = ["docker", "build", self.docker_folder, "-t", "{}:{}".format(self.name, tag)]
-        logging.info(cmd)
-        subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
+        self._exec_cmd(cmd)
 
     def pull(self) -> None:
         raise RuntimeError("Unsupported functionality")
@@ -130,12 +134,4 @@ class DockerImage:
         ]
         # if hasattr(extension, "add_entrypoint_args"):
         #     extension.add_entrypoint_args(args, cmd)
-        logging.info("Running cmd: {}".format(" ".join(cmd)))
-        subprocess.run(
-            " ".join(cmd),
-            stdin=sys.stdin,
-            stdout=sys.stdout,
-            stderr=sys.stderr,
-            check=True,
-            shell=True,
-        )
+        self._exec_cmd(cmd)

@@ -25,9 +25,6 @@ class LoggingLevel(str, Enum):
     DEBUG = "DEBUG"
 
 
-"""Dictionary of all docker images specified by the CLI"""
-DockerImages = {}
-
 WRAPPER_EXTENSIONS: Dict[str, Callable[[], docker_helpers.DockerImage]] = {}
 
 EnumClassType = NewType("EnumClassType", Enum)
@@ -38,6 +35,32 @@ class TEST:
         self.month = month
 
 
+def find_extensions(image_dir: Path) -> Dict[str, Callable[[], docker_helpers.DockerImage]]:
+    # Find all available docker images under the image_dir folder
+    # Assume that each folder is a separate docker image and there is no nestting
+    # Expected that each folder should have a docker_wrapper_extensions.py Python script
+    # and a Docker folder with ant necessary files
+    docker_images = {}
+    for root, dirs, _ in os.walk(os.path.realpath(image_dir), topdown=True):
+        for dir in dirs:
+            if "Docker" == dir:
+                image_name = os.path.basename(root)
+                docker_images[image_name] = os.path.realpath(root)
+    logging.debug(f"Found docker images: {docker_images}")
+    # Load the docker_wrapper_extensions.py, import it as a module and get a callable
+    # object for the DockerImage class object that each file contains
+    extensions = {}
+    for iname, ipath in docker_images.items():
+        spec = importlib.util.spec_from_file_location(
+            "docker_wrapper_extensions", os.path.join(ipath, "docker_wrapper_extensions.py")
+        )
+        mod = importlib.util.module_from_spec(spec)  # type: ignore
+        spec.loader.exec_module(mod)  # type: ignore
+        image_constructor = mod.DockerImage
+        extensions[iname] = image_constructor
+    return extensions
+
+
 def create_image(image_name: str) -> docker_helpers.DockerImage:
     if image_name not in WRAPPER_EXTENSIONS:
         typer.echo(f"Unknown Image {image_name}")
@@ -46,12 +69,14 @@ def create_image(image_name: str) -> docker_helpers.DockerImage:
     return image
 
 
-def create_cli(image_names: Union[str, EnumClassType]) -> typer.Typer:
+def create_cli(
+    image_names: Union[str, EnumClassType], image_dir: Optional[str] = None
+) -> typer.Typer:
     app = typer.Typer()
 
     @app.callback()
     def main(
-        image_dir: Path,
+        image_dir: Path = typer.Argument(image_dir),
         log_level: LoggingLevel = typer.Option(LoggingLevel.INFO, help="Set logging level"),
         show_choices: bool = True,
     ) -> None:
@@ -67,26 +92,8 @@ def create_cli(image_names: Union[str, EnumClassType]) -> typer.Typer:
         # check the logging log_level_choices have not changed from our expected values
         assert isinstance(log_level_int, int)
         logging.basicConfig(level=log_level_int)
-        # Find all available docker images under the image_dir folder
-        # Assume that each folder is a separate docker image and there is no nestting
-        # Expected that each folder should have a docker_wrapper_extensions.py Python script
-        # and a Docker folder with ant necessary files
-        for root, dirs, _ in os.walk(os.path.realpath(image_dir), topdown=True):
-            for dir in dirs:
-                if "Docker" == dir:
-                    image_name = os.path.basename(root)
-                    DockerImages[image_name] = os.path.realpath(root)
-        logging.debug(f"Found docker images: {DockerImages}")
-        # Load the docker_wrapper_extensions.py, import it as a module and get a callable
-        # object for the DockerImage class object that each file contains
-        for iname, ipath in DockerImages.items():
-            spec = importlib.util.spec_from_file_location(
-                "docker_wrapper_extensions", os.path.join(ipath, "docker_wrapper_extensions.py")
-            )
-            mod = importlib.util.module_from_spec(spec)  # type: ignore
-            spec.loader.exec_module(mod)  # type: ignore
-            image_constructor = mod.DockerImage
-            WRAPPER_EXTENSIONS[iname] = image_constructor
+        global WRAPPER_EXTENSIONS
+        WRAPPER_EXTENSIONS = find_extensions(image_dir)
 
     @app.command()
     def prompt(
