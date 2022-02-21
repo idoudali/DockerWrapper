@@ -30,21 +30,21 @@ class DockerImage:
         contents of the Docker folder of the project
 
         Return  the 10 first digits"""
-        return checksumdir.dirhash(docker_path, "sha1")[:10]
+        return checksumdir.dirhash(docker_path, "sha1")
 
     @property
     def image_hash(self) -> str:
         return self.folder_hash(self.docker_folder)
 
     @property
-    def image_version(self) -> str:
-        if not self.version:
-            return self.image_hash
-        return self.version
+    def image_tag(self) -> str:
+        if self.version:
+            return self.version
+        return self.image_hash[:10]
 
     @property
     def tagged_name(self) -> str:
-        return f"{self.name}:{self.image_version}"
+        return f"{self.name}:{self.image_tag}"
 
     @property
     def image_url(self) -> str:
@@ -52,10 +52,13 @@ class DockerImage:
             return self.tagged_name
         return f"{self.repo_url}/{self.tagged_name}"
 
-    def build_image(self) -> None:
+    def build_image(self, force_build: bool = False) -> None:
         """Build the image"""
-        tag = self.image_hash
-        cmd = ["docker", "build", self.docker_folder, "-t", "{}:{}".format(self.name, tag)]
+        image_url = self.image_url
+        if self.image_exists(image_url) and not force_build:
+            logging.info(f"Image: {image_url} already exists, not rebuilding")
+            return
+        cmd = ["docker", "build", self.docker_folder, "-t", image_url]
         self._exec_cmd(cmd)
 
     def pull(self) -> None:
