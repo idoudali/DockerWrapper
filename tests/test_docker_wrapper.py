@@ -17,15 +17,15 @@ def image_registry() -> Dict[str, Callable[[], docker_helpers.DockerImage]]:
 
 
 def test_image_hash(image_registry) -> None:  # type: ignore
-    assert "ubuntu-base" in image_registry
-    image = image_registry["ubuntu-base"]()
+    assert "ubuntu_base" in image_registry
+    image = image_registry["ubuntu_base"]()
     assert image.image_hash == "84ad86be99"
-    assert image.tagged_name == "ubuntu-base:84ad86be99"
+    assert image.tagged_name == "ubuntu_base:84ad86be99"
 
 
 def test_image_prompt(image_registry, mocker) -> None:  # type: ignore
-    assert "ubuntu-base" in image_registry
-    image = image_registry["ubuntu-base"]()
+    assert "ubuntu_base" in image_registry
+    image = image_registry["ubuntu_base"]()
     mocker.patch.object(image, "_exec_cmd", autospec=True)
     image.run("")
     run_args = image._exec_cmd.call_args.args[0]
