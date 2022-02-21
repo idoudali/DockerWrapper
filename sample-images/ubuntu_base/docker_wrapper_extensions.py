@@ -1,4 +1,4 @@
-"""Extensions to docker_wrapper for this project"""
+"""ubuntu_base docker image"""
 
 import os
 from typing import List
@@ -7,6 +7,12 @@ import docker_wrapper
 
 
 class DockerImage(docker_wrapper.DockerImage):
+    """ubuntu_base docker image
+
+    Args:
+        docker_wrapper (_type_): Parent class
+    """
+
     def __init__(self) -> None:
         super().__init__()
         self.name = "ubuntu_base"
