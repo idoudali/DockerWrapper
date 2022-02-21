@@ -1,4 +1,9 @@
-"""Extensions to docker_wrapper for this project"""
+"""ubuntu_derived
+
+
+Example of a docker image that inherits from another one, in this
+case ubuntu_base
+"""
 
 import hashlib
 import logging
@@ -18,6 +23,8 @@ from ubuntu_base import docker_wrapper_extensions as parent_image  # noqa: E402
 
 
 class DockerImage(docker_wrapper.DockerImage):
+    """DockerImage class of the ubuntu_derived image"""
+
     def __init__(self) -> None:
         super().__init__()
         self.parent = parent_image.DockerImage()
@@ -28,6 +35,16 @@ class DockerImage(docker_wrapper.DockerImage):
 
     @property
     def image_hash(self) -> str:
+        """Compute the hash of the derived image
+
+        To capture correctly any possible changes to the
+        parent image as well, the image hash is the combined
+        has of the parent_image and the hash of the Docker folder
+        of the derived image.
+
+        Returns:
+            str: Returned hash value
+        """
         parent_image_hash = self.parent.image_hash
         logging.debug(f"Parent hash: {parent_image_hash}")
         this_image_hash = self.folder_hash(self.docker_folder)
@@ -38,6 +55,14 @@ class DockerImage(docker_wrapper.DockerImage):
         return hash_object
 
     def build_image(self, force_build: bool = False) -> None:
+        """Build the image
+
+        The derived image will trigger a build of the parent image and
+        then proceed to its own build.
+
+        Args:
+            force_build (bool, optional): _description_. Defaults to False.
+        """
         image_url = self.image_url
         if self.image_exists(image_url) and not force_build:
             logging.info(f"Image: {image_url} already exists, not rebuilding")

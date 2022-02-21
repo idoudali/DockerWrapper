@@ -12,6 +12,10 @@ import docker
 
 
 class DockerImage:
+    """Class providing the necessary interface to interact with a Docker image
+    and create containers.
+    """
+
     def __init__(self) -> None:
         self.docker_client = docker.from_env()
         self.name = "UNDEFINED"
@@ -21,6 +25,11 @@ class DockerImage:
 
     @staticmethod
     def _exec_cmd(cmd: List[str]) -> None:
+        """Helper function to execute a shell command, and log it it as well
+
+        Args:
+            cmd (List[str]): The command and its arguments in a list format.
+        """
         logging.info(cmd)
         subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
 
@@ -29,31 +38,67 @@ class DockerImage:
         """Compute the hash  of the docker image based on the
         contents of the Docker folder of the project
 
-        Return  the 10 first digits"""
+        Args:
+            docker_path (str): Path of the Docker folder that contains the Dockerfile
+                the entrypoint and any other related logic.
+
+        Returns:
+            str: Return the hash of the contents of the Docker folder.
+        """
         return checksumdir.dirhash(docker_path, "sha1")
 
     @property
     def image_hash(self) -> str:
+        """Return the full hash of the image
+
+        Returns:
+            str: Hash value.
+        """
         return self.folder_hash(self.docker_folder)
 
     @property
     def image_tag(self) -> str:
+        """Return the tag of the image
+
+        If the image has an explicit numeric version return that, else
+        return the first 10 characters of the image hash.
+
+        Returns:
+            str: Return string to be used at the image tag.
+        """
         if self.version:
             return self.version
         return self.image_hash[:10]
 
     @property
     def tagged_name(self) -> str:
+        """Return the tuple <IMAGE_NAME>:<IMAGE_TAG>
+
+        Returns:
+            str: String result
+        """
         return f"{self.name}:{self.image_tag}"
 
     @property
     def image_url(self) -> str:
+        """Return the full image URL, that is the
+            <REPO_URL>/<IMAGE_NAME>:<IMAGE_TAG>
+
+        Returns:
+            str: String result
+        """
         if not self.repo_url:
             return self.tagged_name
         return f"{self.repo_url}/{self.tagged_name}"
 
     def build_image(self, force_build: bool = False) -> None:
-        """Build the image"""
+        """Build the Docker image if a specific version does not
+        already exist.
+
+        Args:
+            force_build (bool, optional): Iff True then build the image regardless
+                . Defaults to False.
+        """
         image_url = self.image_url
         if self.image_exists(image_url) and not force_build:
             logging.info(f"Image: {image_url} already exists, not rebuilding")
@@ -62,13 +107,22 @@ class DockerImage:
         self._exec_cmd(cmd)
 
     def pull(self) -> None:
+        """Pull the image from the registry."""
         raise RuntimeError("Unsupported functionality")
 
     def push(self) -> None:
+        """Push the image to the registry"""
         raise RuntimeError("Unsupported functionality")
 
     def image_exists(self, url: str) -> bool:
-        """Return true if a docker image exists"""
+        """Return true if a docker image exists locally.
+
+        Args:
+            url (str): Full URL:TAG name of the image
+
+        Returns:
+            bool: True iff the image exists locally
+        """
         try:
             self.docker_client.images.get(url)
             return True
@@ -87,6 +141,21 @@ class DockerImage:
         enable_gui: bool = False,
         ports: Optional[List[str]] = None,
     ) -> None:
+        """Run a container from the Docker Image
+
+        Args:
+            project_dir (Path): Project we want to work inside the container.
+                Mount the volume inside the container
+            prompt (bool, optional): Iff true start the container in interactive mode and
+                start a prompt to provide to the user. Defaults to False.
+            nvidia_docker (bool, optional): Use nvidia-docker to enable GPU use.
+                Defaults to False.
+            privileged (bool, optional): Enable privileged mode. Defaults to False.
+            enable_gui (bool, optional): Enable support for starting GUI apps inside the container.
+                Defaults to False.
+            ports (Optional[List[str]], optional): List of ports to enable to open from the
+                container. Defaults to None.
+        """
         image_url = self.image_url
         logging.debug(f"Using Image: {image_url}")
         if not self.image_exists(image_url):
