@@ -9,7 +9,7 @@ import docker_wrapper
 class DockerImage(docker_wrapper.DockerImage):
     def __init__(self) -> None:
         super().__init__()
-        self.name = "ubuntu-base"
+        self.name = "ubuntu_base"
         self.docker_folder = os.path.realpath(
             os.path.join(os.path.realpath(__file__), "../Docker")
         )
