@@ -33,14 +33,10 @@ class LoggingLevel(str, Enum):
     DEBUG = "DEBUG"
 
 
-WRAPPER_EXTENSIONS: Dict[str, Callable[[], docker_helpers.DockerImage]] = {}
+__WRAPPER_EXTENSIONS: Dict[str, Callable[[], docker_helpers.DockerImage]] = {}
+__DOCKER_IMAGE_CLASS_NAME = "DockerImages"
 
 EnumClassType = NewType("EnumClassType", Enum)
-
-
-class TEST:
-    def __init__(self, month: str):  # Several values per member are possible.
-        self.month = month
 
 
 def find_extensions(image_dir: Path) -> Dict[str, Callable[[], docker_helpers.DockerImage]]:
@@ -57,6 +53,8 @@ def find_extensions(image_dir: Path) -> Dict[str, Callable[[], docker_helpers.Do
     # Assume that each folder is a separate docker image and there is no nestting
     # Expected that each folder should have a docker_wrapper_extensions.py Python script
     # and a Docker folder with ant necessary files
+    if not image_dir:
+        return {}
     docker_images = {}
     for root, dirs, _ in os.walk(os.path.realpath(image_dir), topdown=True):
         for dir in dirs:
@@ -78,7 +76,7 @@ def find_extensions(image_dir: Path) -> Dict[str, Callable[[], docker_helpers.Do
     return extensions
 
 
-def create_image(image_name: str) -> docker_helpers.DockerImage:
+def __create_image(image_name: str) -> docker_helpers.DockerImage:
     """Instantiate an DockerImage object (or its subclass) for the specified
     Image
 
@@ -91,22 +89,31 @@ def create_image(image_name: str) -> docker_helpers.DockerImage:
     Returns:
         docker_helpers.DockerImage: Docker image object to be used to interact with it.
     """
-    if image_name not in WRAPPER_EXTENSIONS:
+    if image_name not in __WRAPPER_EXTENSIONS:
         typer.echo(f"Unknown Image {image_name}")
         raise typer.Exit(1)
-    image = WRAPPER_EXTENSIONS[image_name]()
+    image = __WRAPPER_EXTENSIONS[image_name]()
     return image
 
 
-def create_cli(
-    image_names: Union[str, EnumClassType], image_dir: Optional[str] = None
-) -> typer.Typer:
+def __get_image_name_value(image_name: Union[str, EnumClassType]) -> str:
+    """Get the string value of image_name
+
+    Args:
+        image_name (Union[str, EnumClassType]): Value returned by the CLI
+
+    Returns:
+        str: Actual value
+    """
+    if isinstance(image_name, str):
+        return image_name
+    return str(image_name.value)
+
+
+def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
     """Create the command line interface of the Docker Wrapper
 
     Args:
-        image_names (Union[str, EnumClassType]): Union. pass a string if we do not
-            know the list of functions ahead of time, or an Enum with the allowed list
-            of images to use.
         image_dir (Optional[str], optional): Direcotry where the Docker image Dockerfiles and
             related code are located. Defaults to None.
 
@@ -116,9 +123,18 @@ def create_cli(
     """
     app = typer.Typer()
 
+    if image_dir:
+        global __WRAPPER_EXTENSIONS
+        __WRAPPER_EXTENSIONS = {i: i for i in next(os.walk(os.path.realpath(image_dir)))[1]}  # type: ignore # noqa: E501
+        images = {i: i for i in __WRAPPER_EXTENSIONS.keys()}
+        global __DOCKER_IMAGE_CLASS_NAME
+        image_names = Enum(__DOCKER_IMAGE_CLASS_NAME, images)  # type: ignore
+    else:
+        image_names = str  # type: ignore
+
     @app.callback()
     def main(
-        image_dir: Path = typer.Argument(image_dir),
+        image_dir: Path = typer.Option(image_dir, help="Path where the docker images are located"),
         log_level: LoggingLevel = typer.Option(LoggingLevel.INFO, help="Set logging level"),
     ) -> None:
         """Main command arguments
@@ -138,12 +154,12 @@ def create_cli(
         # check the logging log_level_choices have not changed from our expected values
         assert isinstance(log_level_int, int)
         logging.basicConfig(level=log_level_int)
-        global WRAPPER_EXTENSIONS
-        WRAPPER_EXTENSIONS = find_extensions(image_dir)
+        global __WRAPPER_EXTENSIONS
+        __WRAPPER_EXTENSIONS = find_extensions(image_dir)
 
     @app.command()
     def prompt(
-        image_name: image_names,  # type: ignore
+        image_name: image_names,
         project_dir: Path = typer.Option(".", help="Path of the repo top-level"),
         nvidia_docker: bool = typer.Option(False, help="Use NVidia-docker"),
         privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
@@ -160,7 +176,7 @@ def create_cli(
             port (Optional[List[str]], optional): List of ports to open in the container.
                 Defaults to typer.Option(None, help="Port to forward from Docker").
         """
-        image = create_image(image_name)
+        image = __create_image(__get_image_name_value(image_name))  # type: ignore
         image.run(
             prompt=True,
             project_dir=project_dir,
@@ -168,38 +184,38 @@ def create_cli(
 
     @app.command()
     def build(
-        image_name: image_names,  # type: ignore
+        image_name: image_names,
     ) -> None:
         """Build a docker image
 
         Args:
             image_name (image_names): Name of the image to build
         """
-        image = create_image(image_name)
+        image = __create_image(__get_image_name_value(image_name))  # type: ignore
         image.build_image()
 
     @app.command()
     def push(
-        image_name: image_names,  # type: ignore
+        image_name: image_names,
     ) -> None:
         """Push a Docker image to a Docker registry
 
         Args:
             image_name (image_names): Name of the image to push
         """
-        image = create_image(image_name)
+        image = __create_image(__get_image_name_value(image_name))  # type: ignore
         image.push()
 
     @app.command()
     def pull(
-        image_name: image_names,  # type: ignore
+        image_name: image_names,
     ) -> None:
         """Pull a docker image form a Docker registry
 
         Args:
             image_name (image_names): Name of the image to pull
         """
-        image = create_image(image_name)
+        image = __create_image(__get_image_name_value(image_name))  # type: ignore
         image.pull()
 
     return app
@@ -207,9 +223,7 @@ def create_cli(
 
 def main() -> None:
     """Helper main function"""
-    image_names = str
-
-    app = create_cli(image_names)  # type: ignore
+    app = create_cli()
     app()
 
 
