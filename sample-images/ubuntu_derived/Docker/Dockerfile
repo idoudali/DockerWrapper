@@ -7,4 +7,4 @@ RUN apt-get update && apt-get install -y \
 
 COPY ./entrypoint.sh  /
 
-ENTRYPOINT /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 if [[ -z "$UID" ]]; then
     echo Undefined macro $UID
@@ -25,7 +25,7 @@ fi;
 addgroup  --gid $GID $USERNAME
 useradd --uid $GID --gid $UID $USERNAME -p test
 
-echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/doudalis
+echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USERNAME
 
 cd $SRC_DIR
 
@@ -39,5 +39,6 @@ if [[ -n "$PROMPT" ]]; then
     exit 0;
 fi;
 
+echo $@
 # Execute the rest of the commands as is
 exec gosu $USERNAME bash -c "$@"

@@ -123,10 +123,10 @@ def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
     """
     app = typer.Typer()
 
+    images = {}
     if image_dir:
         global __WRAPPER_EXTENSIONS
-        __WRAPPER_EXTENSIONS = {i: i for i in next(os.walk(os.path.realpath(image_dir)))[1]}  # type: ignore # noqa: E501
-        images = {i: i for i in __WRAPPER_EXTENSIONS.keys()}
+        images = {i: i for i in next(os.walk(os.path.realpath(image_dir)))[1]}
         global __DOCKER_IMAGE_CLASS_NAME
         image_names = Enum(__DOCKER_IMAGE_CLASS_NAME, images)  # type: ignore
     else:
@@ -156,31 +156,6 @@ def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
         logging.basicConfig(level=log_level_int)
         global __WRAPPER_EXTENSIONS
         __WRAPPER_EXTENSIONS = find_extensions(image_dir)
-
-    @app.command()
-    def prompt(
-        image_name: image_names,
-        project_dir: Path = typer.Option(".", help="Path of the repo top-level"),
-        nvidia_docker: bool = typer.Option(False, help="Use NVidia-docker"),
-        privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
-        port: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
-    ) -> None:
-        """Prompt subcommand, start a docker container and drop the user inside a prompt
-
-        Args:
-            image_name (image_names): Name of the image to use
-            nvidia_docker (bool, optional): Enable use of nvidia-docker.
-                Defaults to typer.Option(False, help="Use NVidia-docker").
-            privileged (bool, optional): Enabled docker privileged mode.
-                Defaults to typer.Option(False, help="Enable Docker privileged mode").
-            port (Optional[List[str]], optional): List of ports to open in the container.
-                Defaults to typer.Option(None, help="Port to forward from Docker").
-        """
-        image = __create_image(__get_image_name_value(image_name))  # type: ignore
-        image.run(
-            prompt=True,
-            project_dir=project_dir,
-        )
 
     @app.command()
     def build(
@@ -217,6 +192,77 @@ def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
         """
         image = __create_image(__get_image_name_value(image_name))  # type: ignore
         image.pull()
+
+    @app.command()
+    def prompt(
+        image_name: image_names,
+        project_dir: Path = typer.Option(".", help="Path of the repo top-level"),
+        nvidia_docker: bool = typer.Option(False, help="Use NVidia-docker"),
+        privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
+        ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
+    ) -> None:
+        """Prompt subcommand, start a docker container and drop the user inside a prompt
+
+        Args:
+            image_name (image_names): Name of the image to use
+            nvidia_docker (bool, optional): Enable use of nvidia-docker.
+                Defaults to typer.Option(False, help="Use NVidia-docker").
+            privileged (bool, optional): Enabled docker privileged mode.
+                Defaults to typer.Option(False, help="Enable Docker privileged mode").
+            port (Optional[List[str]], optional): List of ports to open in the container.
+                Defaults to typer.Option(None, help="Port to forward from Docker").
+        """
+        image = __create_image(__get_image_name_value(image_name))  # type: ignore
+        image.run(
+            prompt=True,
+            project_dir=project_dir,
+            nvidia_docker=nvidia_docker,
+            privileged=privileged,
+            ports=ports,
+        )
+
+    @app.command()
+    def run(
+        image_name: image_names,
+        arguments: List[str],
+        project_dir: Path = typer.Option(".", help="Path of the repo top-level"),
+        nvidia_docker: bool = typer.Option(False, help="Use NVidia-docker"),
+        privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
+        ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
+    ) -> None:
+        """Run the following command inside the container
+
+        Args:
+            image_name (image_names): Name of the image to create a container from
+            arguments (List[str]): Commands to run inside the container
+        """
+        image = __create_image(__get_image_name_value(image_name))  # type: ignore
+        image.run(
+            cmds=arguments,
+            project_dir=project_dir,
+            nvidia_docker=nvidia_docker,
+            privileged=privileged,
+            ports=ports,
+        )
+
+    for k in images.keys():
+
+        @app.command(k)
+        def run_image(
+            arguments: List[str],
+            project_dir: Path = typer.Option(".", help="Path of the repo top-level"),
+            nvidia_docker: bool = typer.Option(False, help="Use NVidia-docker"),
+            privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
+            ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
+        ) -> None:
+            image = __create_image(__get_image_name_value(k))
+            image.run(
+                cmds=arguments,
+                project_dir=project_dir,
+                nvidia_docker=nvidia_docker,
+                privileged=privileged,
+                ports=ports,
+            )
 
     return app
 
