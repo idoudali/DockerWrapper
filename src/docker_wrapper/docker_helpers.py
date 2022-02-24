@@ -30,7 +30,7 @@ class DockerImage:
         Args:
             cmd (List[str]): The command and its arguments in a list format.
         """
-        logging.info(cmd)
+        logging.info(" ".join(cmd))
         subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
 
     @staticmethod
@@ -136,6 +136,7 @@ class DockerImage:
         self,
         project_dir: Path,
         prompt: bool = False,
+        cmds: Optional[List[str]] = None,
         nvidia_docker: bool = False,
         privileged: bool = False,
         enable_gui: bool = False,
@@ -156,6 +157,8 @@ class DockerImage:
             ports (Optional[List[str]], optional): List of ports to enable to open from the
                 container. Defaults to None.
         """
+        if not (bool(prompt) ^ bool(cmds)):
+            raise RuntimeError("Either or neither prompt or cmds are set, only one could be set")
         image_url = self.image_url
         logging.debug(f"Using Image: {image_url}")
         if not self.image_exists(image_url):
@@ -190,11 +193,12 @@ class DockerImage:
             "-e",
             f"SRC_DIR={project_realpath}",
         ]
-        if prompt:
-            cmd += ["-t", "-i", "-e", "PROMPT=1"]
         if ports:
             for port in ports:
                 cmd += ["-p", f"{port}:{port}"]
+
+        if prompt:
+            cmd += ["-t", "-i", "-e", "PROMPT=1"]
 
         cmd += self.get_docker_run_args()
         cmd += [
@@ -204,6 +208,10 @@ class DockerImage:
             f"{project_realpath}:{project_realpath}",
             image_url,
         ]
+
+        if cmds:
+            cmd.append(" ".join(cmds))
+
         # if hasattr(extension, "add_entrypoint_args"):
         #     extension.add_entrypoint_args(args, cmd)
         self._exec_cmd(cmd)
