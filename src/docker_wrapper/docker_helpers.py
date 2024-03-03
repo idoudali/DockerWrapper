@@ -137,6 +137,7 @@ class DockerImage:
         project_dir: Path,
         prompt: bool = False,
         cmds: Optional[List[str]] = None,
+        network: Optional[str] = None,
         nvidia_docker: bool = False,
         privileged: bool = False,
         enable_gui: bool = False,
@@ -149,6 +150,11 @@ class DockerImage:
                 Mount the volume inside the container
             prompt (bool, optional): Iff true start the container in interactive mode and
                 start a prompt to provide to the user. Defaults to False.
+
+            cmds (Optional[List[str]], optional): List of commands to run inside the container.
+                Defaults to None.
+            network (Optional[str], optional): Name of the network to connect the container to.
+                Defaults to None.
             nvidia_docker (bool, optional): Use nvidia-docker to enable GPU use.
                 Defaults to False.
             privileged (bool, optional): Enable privileged mode. Defaults to False.
@@ -181,8 +187,8 @@ class DockerImage:
                 "-v",
                 "/tmp/.X11-unix:/tmp/.X11-unix",
             ]
-        # if args.network:
-        #     cmd += [f"--network={args.network}"]
+        if network:
+            cmd += [f"--network={network}"]
         cmd += [
             "-e",
             "UID={}".format(uid),
@@ -212,6 +218,4 @@ class DockerImage:
         if cmds:
             cmd.append(" ".join(cmds))
 
-        # if hasattr(extension, "add_entrypoint_args"):
-        #     extension.add_entrypoint_args(args, cmd)
         self._exec_cmd(cmd)
