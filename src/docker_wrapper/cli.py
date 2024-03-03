@@ -6,6 +6,7 @@
 from enum import Enum
 import importlib
 import importlib.util
+import inspect
 import logging
 import os
 from pathlib import Path
@@ -71,8 +72,13 @@ def find_extensions(image_dir: Path) -> Dict[str, Callable[[], docker_helpers.Do
         )
         mod = importlib.util.module_from_spec(spec)  # type: ignore
         spec.loader.exec_module(mod)  # type: ignore
-        image_constructor = mod.DockerImage
-        extensions[iname] = image_constructor
+        docker_image_classes = []
+        for name, obj in inspect.getmembers(mod):
+            if inspect.isclass(obj) and issubclass(obj, docker_helpers.DockerImage):
+                docker_image_classes.append(obj)
+                # docker_image_classes contains the classes that are of type DockerImage
+                extensions[obj.NAME] = obj
+
     return extensions
 
 
@@ -126,7 +132,8 @@ def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
     images = {}
     if image_dir:
         global __WRAPPER_EXTENSIONS
-        images = {i: i for i in next(os.walk(os.path.realpath(image_dir)))[1]}
+        __WRAPPER_EXTENSIONS = find_extensions(Path(image_dir))
+        images = {i: i for i in __WRAPPER_EXTENSIONS.keys()}
         global __DOCKER_IMAGE_CLASS_NAME
         image_names = Enum(__DOCKER_IMAGE_CLASS_NAME, images)  # type: ignore
     else:
@@ -197,26 +204,28 @@ def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
     def prompt(
         image_name: image_names,
         project_dir: Path = typer.Option(".", help="Path of the repo top-level"),
+        network: Optional[str] = typer.Option(None, help="Pass the network information."),
         nvidia_docker: bool = typer.Option(False, help="Use NVidia-docker"),
         privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
         ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
     ) -> None:
-        """Prompt subcommand, start a docker container and drop the user inside a prompt
+        """
+        Prompt subcommand, start a docker container and drop the user inside a prompt
 
         Args:
             image_name (image_names): Name of the image to use
-            nvidia_docker (bool, optional): Enable use of nvidia-docker.
-                Defaults to typer.Option(False, help="Use NVidia-docker").
-            privileged (bool, optional): Enabled docker privileged mode.
-                Defaults to typer.Option(False, help="Enable Docker privileged mode").
-            port (Optional[List[str]], optional): List of ports to open in the container.
-                Defaults to typer.Option(None, help="Port to forward from Docker").
+            project_dir (Path, optional): Path of the repo top-level. Defaults to ".".
+            nvidia_docker (bool, optional): Use NVidia-docker. Defaults to False.
+            privileged (bool, optional): Enable Docker privileged mode. Defaults to False.
+            ports (Optional[List[str]], optional): Port to forward from Docker. Defaults to None.
+            network (Optional[str], optional): Pass the network information. Defaults to None.
         """
         image = __create_image(__get_image_name_value(image_name))  # type: ignore
         image.run(
             prompt=True,
             project_dir=project_dir,
             nvidia_docker=nvidia_docker,
+            network=network,
             privileged=privileged,
             ports=ports,
         )
