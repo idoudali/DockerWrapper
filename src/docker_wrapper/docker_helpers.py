@@ -16,12 +16,12 @@ class DockerImage:
     and create containers.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, docker_registry_prefix: str = "") -> None:
         self.docker_client = docker.from_env()
         self.name = "UNDEFINED"
         self.docker_folder = ""
         self.version = ""
-        self.repo_url = ""
+        self.repo_url = docker_registry_prefix or "unknown"
 
     @staticmethod
     def _exec_cmd(cmd: List[str]) -> None:
@@ -108,11 +108,13 @@ class DockerImage:
 
     def pull(self) -> None:
         """Pull the image from the registry."""
-        raise RuntimeError("Unsupported functionality")
+        cmd = ["docker", "pull", self.image_url]
+        self._exec_cmd(cmd)
 
     def push(self) -> None:
         """Push the image to the registry"""
-        raise RuntimeError("Unsupported functionality")
+        cmd = ["docker", "push", self.image_url]
+        self._exec_cmd(cmd)
 
     def image_exists(self, url: str) -> bool:
         """Return true if a docker image exists locally.

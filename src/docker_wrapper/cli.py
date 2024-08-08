@@ -10,6 +10,7 @@ import inspect
 import logging
 import os
 from pathlib import Path
+import subprocess
 from typing import Callable, Dict, List, NewType, Optional, Union
 
 import typer
@@ -81,13 +82,16 @@ def find_extensions(image_dir: Path) -> Dict[str, Callable[[], docker_helpers.Do
 
     return extensions
 
+    docker_registry = env_config.get("docker-registry-prefix", "")
 
-def __create_image(image_name: str) -> docker_helpers.DockerImage:
+
+def __create_image(image_name: str, docker_registry_prefix: str) -> docker_helpers.DockerImage:
     """Instantiate an DockerImage object (or its subclass) for the specified
     Image
 
     Args:
         image_name (str): Name of the image to create an image for.
+        docker_registry_prefix (str): Docker registry prefix
 
     Raises:
         typer.Exit: Failure if the image is not found
@@ -98,7 +102,7 @@ def __create_image(image_name: str) -> docker_helpers.DockerImage:
     if image_name not in __WRAPPER_EXTENSIONS:
         typer.echo(f"Unknown Image {image_name}")
         raise typer.Exit(1)
-    image = __WRAPPER_EXTENSIONS[image_name]()
+    image = __WRAPPER_EXTENSIONS[image_name](docker_registry_prefix=docker_registry_prefix)
     return image
 
 
@@ -116,12 +120,15 @@ def __get_image_name_value(image_name: Union[str, EnumClassType]) -> str:
     return str(image_name.value)
 
 
-def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
+def create_cli(
+    image_dir: Optional[str] = None, env_config: Optional[Dict[str, str]] = {}
+) -> typer.Typer:
     """Create the command line interface of the Docker Wrapper
 
     Args:
         image_dir (Optional[str], optional): Direcotry where the Docker image Dockerfiles and
             related code are located. Defaults to None.
+        env_config (Optional[Dict[str, str]], optional): Configuration environment of the repository.
 
     Returns:
         typer.Typer: Typer class wit the registered command line arguments. See the main()
@@ -138,6 +145,9 @@ def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
         image_names = Enum(__DOCKER_IMAGE_CLASS_NAME, images)  # type: ignore
     else:
         image_names = str  # type: ignore
+
+    docker_registry_prefix = env_config.get("docker-registry-prefix", "")
+    docker_login_cmd = env_config.get("docker-login-command", "")
 
     @app.callback()
     def main(
@@ -164,6 +174,10 @@ def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
         global __WRAPPER_EXTENSIONS
         __WRAPPER_EXTENSIONS = find_extensions(image_dir)
 
+        if docker_login_cmd:
+            logging.info("Performing docker login")
+            subprocess.run(docker_login_cmd, shell=True, check=True)
+
     @app.command()
     def build(
         image_name: image_names,
@@ -173,7 +187,7 @@ def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
         Args:
             image_name (image_names): Name of the image to build
         """
-        image = __create_image(__get_image_name_value(image_name))  # type: ignore
+        image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
         image.build_image()
 
     @app.command()
@@ -185,7 +199,7 @@ def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
         Args:
             image_name (image_names): Name of the image to push
         """
-        image = __create_image(__get_image_name_value(image_name))  # type: ignore
+        image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
         image.push()
 
     @app.command()
@@ -197,7 +211,7 @@ def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
         Args:
             image_name (image_names): Name of the image to pull
         """
-        image = __create_image(__get_image_name_value(image_name))  # type: ignore
+        image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
         image.pull()
 
     @app.command()
@@ -209,7 +223,7 @@ def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
         Args:
             image_name (image_names): Name of the image to pull
         """
-        image = __create_image(__get_image_name_value(image_name))  # type: ignore
+        image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
         print(image.image_url)
 
     @app.command()
@@ -232,7 +246,7 @@ def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
             ports (Optional[List[str]], optional): Port to forward from Docker. Defaults to None.
             network (Optional[str], optional): Pass the network information. Defaults to None.
         """
-        image = __create_image(__get_image_name_value(image_name))  # type: ignore
+        image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
         image.run(
             prompt=True,
             project_dir=project_dir,
@@ -257,7 +271,7 @@ def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
             image_name (image_names): Name of the image to create a container from
             arguments (List[str]): Commands to run inside the container
         """
-        image = __create_image(__get_image_name_value(image_name))  # type: ignore
+        image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
         image.run(
             cmds=arguments,
             project_dir=project_dir,
@@ -276,7 +290,7 @@ def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
             privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
             ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
         ) -> None:
-            image = __create_image(__get_image_name_value(k))
+            image = __create_image(__get_image_name_value(k), docker_registry_prefix)
             image.run(
                 cmds=arguments,
                 project_dir=project_dir,
