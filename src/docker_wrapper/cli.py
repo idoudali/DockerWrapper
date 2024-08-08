@@ -201,6 +201,18 @@ def create_cli(image_dir: Optional[str] = None) -> typer.Typer:
         image.pull()
 
     @app.command()
+    def image_url(
+        image_name: image_names,
+    ) -> None:
+        """URL of the image to use
+
+        Args:
+            image_name (image_names): Name of the image to pull
+        """
+        image = __create_image(__get_image_name_value(image_name))  # type: ignore
+        print(image.image_url)
+
+    @app.command()
     def prompt(
         image_name: image_names,
         project_dir: Path = typer.Option(".", help="Path of the repo top-level"),
