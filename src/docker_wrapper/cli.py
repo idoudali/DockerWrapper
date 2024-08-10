@@ -18,6 +18,7 @@ import typer
 from . import docker_helpers
 
 _LOG_LEVEL_STRINGS = ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]
+LOCAL_ENV_CONFIG = {}
 
 
 class LoggingLevel(str, Enum):
@@ -39,6 +40,25 @@ __WRAPPER_EXTENSIONS: Dict[str, Callable[[], docker_helpers.DockerImage]] = {}
 __DOCKER_IMAGE_CLASS_NAME = "DockerImages"
 
 EnumClassType = NewType("EnumClassType", Enum)
+
+
+def set_env_config(config: Dict[str, str]) -> None:
+    """Set the configuration of the repository
+
+    Args:
+        config (Dict[str, str]): Configuration of the repository
+    """
+    global LOCAL_ENV_CONFIG
+    LOCAL_ENV_CONFIG = config
+
+
+def get_env_config() -> Dict[str, str]:
+    """Get the configuration of the repository
+
+    Returns:
+        Dict[str, str]: Configuration of the repository
+    """
+    return LOCAL_ENV_CONFIG
 
 
 def find_extensions(image_dir: Path) -> Dict[str, Callable[[], docker_helpers.DockerImage]]:
@@ -136,6 +156,12 @@ def create_cli(
     """
     app = typer.Typer()
 
+    # Initialize the environment configuration based on passed argument
+    # Yet expect that the environment configuration could be ovewritten
+    # past the creation state. For this reason use the get_env_config() function
+    # to get the configuration at execution of each subcommand.
+    set_env_config(env_config)
+
     images = {}
     if image_dir:
         global __WRAPPER_EXTENSIONS
@@ -145,9 +171,6 @@ def create_cli(
         image_names = Enum(__DOCKER_IMAGE_CLASS_NAME, images)  # type: ignore
     else:
         image_names = str  # type: ignore
-
-    docker_registry_prefix = env_config.get("docker-registry-prefix", "")
-    docker_login_cmd = env_config.get("docker-login-command", "")
 
     @app.callback()
     def main(
@@ -174,6 +197,8 @@ def create_cli(
         global __WRAPPER_EXTENSIONS
         __WRAPPER_EXTENSIONS = find_extensions(image_dir)
 
+        docker_login_cmd = get_env_config().get("docker-login-command", "")
+
         if docker_login_cmd:
             logging.info("Performing docker login")
             subprocess.run(docker_login_cmd, shell=True, check=True)
@@ -187,6 +212,7 @@ def create_cli(
         Args:
             image_name (image_names): Name of the image to build
         """
+        docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
         image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
         image.build_image()
 
@@ -199,6 +225,7 @@ def create_cli(
         Args:
             image_name (image_names): Name of the image to push
         """
+        docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
         image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
         image.push()
 
@@ -211,6 +238,7 @@ def create_cli(
         Args:
             image_name (image_names): Name of the image to pull
         """
+        docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
         image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
         image.pull()
 
@@ -223,6 +251,7 @@ def create_cli(
         Args:
             image_name (image_names): Name of the image to pull
         """
+        docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
         image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
         print(image.image_url)
 
@@ -246,6 +275,7 @@ def create_cli(
             ports (Optional[List[str]], optional): Port to forward from Docker. Defaults to None.
             network (Optional[str], optional): Pass the network information. Defaults to None.
         """
+        docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
         image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
         image.run(
             prompt=True,
@@ -271,6 +301,7 @@ def create_cli(
             image_name (image_names): Name of the image to create a container from
             arguments (List[str]): Commands to run inside the container
         """
+        docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
         image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
         image.run(
             cmds=arguments,
@@ -290,6 +321,7 @@ def create_cli(
             privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
             ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
         ) -> None:
+            docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
             image = __create_image(__get_image_name_value(k), docker_registry_prefix)
             image.run(
                 cmds=arguments,
