@@ -260,9 +260,9 @@ def create_cli(
         image_name: image_names,
         project_dir: Path = typer.Option(".", help="Path of the repo top-level"),
         network: Optional[str] = typer.Option(None, help="Pass the network information."),
-        nvidia_docker: bool = typer.Option(False, help="Use NVidia-docker"),
         privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
         ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
+        volume: Optional[List[str]] = typer.Option(None, help="Volume to mount"),
     ) -> None:
         """
         Prompt subcommand, start a docker container and drop the user inside a prompt
@@ -270,20 +270,20 @@ def create_cli(
         Args:
             image_name (image_names): Name of the image to use
             project_dir (Path, optional): Path of the repo top-level. Defaults to ".".
-            nvidia_docker (bool, optional): Use NVidia-docker. Defaults to False.
             privileged (bool, optional): Enable Docker privileged mode. Defaults to False.
             ports (Optional[List[str]], optional): Port to forward from Docker. Defaults to None.
             network (Optional[str], optional): Pass the network information. Defaults to None.
+            volumes (Optional[List[str]], optional): Volume to mount. Defaults to None.
         """
         docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
         image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
         image.run(
             prompt=True,
             project_dir=project_dir,
-            nvidia_docker=nvidia_docker,
             network=network,
             privileged=privileged,
             ports=ports,
+            volumes=volume,
         )
 
     @app.command()
@@ -291,24 +291,28 @@ def create_cli(
         image_name: image_names,
         arguments: List[str],
         project_dir: Path = typer.Option(".", help="Path of the repo top-level"),
-        nvidia_docker: bool = typer.Option(False, help="Use NVidia-docker"),
         privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
         ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
+        volume: Optional[List[str]] = typer.Option(None, help="Volume to mount"),
     ) -> None:
         """Run the following command inside the container
 
         Args:
             image_name (image_names): Name of the image to create a container from
             arguments (List[str]): Commands to run inside the container
+            project_dir (Path, optional): Path of the repo top-level. Defaults to ".".
+            privileged (bool, optional): Enable Docker privileged mode. Defaults to False.
+            ports (Optional[List[str]], optional): Port to forward from Docker. Defaults to None.
+            volumes (Optional[List[str]], optional): Volume to mount. Defaults to None.
         """
         docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
         image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
         image.run(
             cmds=arguments,
             project_dir=project_dir,
-            nvidia_docker=nvidia_docker,
             privileged=privileged,
             ports=ports,
+            volumes=volume,
         )
 
     for k in images.keys():
@@ -320,6 +324,7 @@ def create_cli(
             nvidia_docker: bool = typer.Option(False, help="Use NVidia-docker"),
             privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
             ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
+            volume: Optional[List[str]] = typer.Option(None, help="Volume to mount"),
         ) -> None:
             docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
             image = __create_image(__get_image_name_value(k), docker_registry_prefix)
@@ -329,6 +334,7 @@ def create_cli(
                 nvidia_docker=nvidia_docker,
                 privileged=privileged,
                 ports=ports,
+                volumes=volume,
             )
 
     return app
