@@ -144,6 +144,7 @@ class DockerImage:
         privileged: bool = False,
         enable_gui: bool = False,
         ports: Optional[List[str]] = None,
+        volumes: Optional[List[str]] = None,
     ) -> None:
         """Run a container from the Docker Image
 
@@ -189,6 +190,8 @@ class DockerImage:
                 "-v",
                 "/tmp/.X11-unix:/tmp/.X11-unix",
             ]
+        for v in volumes:
+            cmd += ["-v", v]
         if network:
             cmd += [f"--network={network}"]
         cmd += [
