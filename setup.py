@@ -36,7 +36,7 @@ setuptools.setup(
     # For VCS dependencies, use pip >= 19 and the PEP 508 syntax.
     #   Example: requests @ git+https://github.com/requests/requests.git@branch_or_tag
     #   See: https://github.com/pypa/pip/issues/6162
-    install_requires=project_dir.joinpath("requirements.txt").read_text().split("\n"),
+    install_requires=project_dir.joinpath("requirements.in").read_text().split("\n"),
     zip_safe=False,
     license="MIT",
     classifiers=[

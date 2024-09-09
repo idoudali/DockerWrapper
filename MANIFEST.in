@@ -1,6 +1,6 @@
 # This file is needed by setup.py
 include README.md
 include LICENSE.txt
-include requirements.txt
+include requirements.in
 include src/docker_wrapper/py.typed
 recursive-exclude tests *
