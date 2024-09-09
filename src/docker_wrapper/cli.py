@@ -103,7 +103,7 @@ def find_extensions(image_dir: Path) -> Dict[str, Callable[[], docker_helpers.Do
     return extensions
 
 
-def __create_image(image_name: str, docker_registry_prefix: str) -> docker_helpers.DockerImage:
+def __create_image(image_name: str, **kwargs) -> docker_helpers.DockerImage:
     """Instantiate an DockerImage object (or its subclass) for the specified
     Image
 
@@ -120,7 +120,7 @@ def __create_image(image_name: str, docker_registry_prefix: str) -> docker_helpe
     if image_name not in __WRAPPER_EXTENSIONS:
         typer.echo(f"Unknown Image {image_name}")
         raise typer.Exit(1)
-    image = __WRAPPER_EXTENSIONS[image_name](docker_registry_prefix=docker_registry_prefix)
+    image = __WRAPPER_EXTENSIONS[image_name](**kwargs)
     return image
 
 
@@ -211,8 +211,8 @@ def create_cli(
         Args:
             image_name (image_names): Name of the image to build
         """
-        docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
-        image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
+        env_config = get_env_config()
+        image = __create_image(__get_image_name_value(image_name), **env_config)  # type: ignore
         image.build_image()
 
     @app.command()
@@ -224,8 +224,8 @@ def create_cli(
         Args:
             image_name (image_names): Name of the image to push
         """
-        docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
-        image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
+        env_config = get_env_config()
+        image = __create_image(__get_image_name_value(image_name), **env_config)  # type: ignore
         image.push()
 
     @app.command()
@@ -237,8 +237,8 @@ def create_cli(
         Args:
             image_name (image_names): Name of the image to pull
         """
-        docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
-        image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
+        env_config = get_env_config()
+        image = __create_image(__get_image_name_value(image_name), **env_config)  # type: ignore
         image.pull()
 
     @app.command()
@@ -250,8 +250,8 @@ def create_cli(
         Args:
             image_name (image_names): Name of the image to pull
         """
-        docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
-        image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
+        env_config = get_env_config()
+        image = __create_image(__get_image_name_value(image_name), **env_config)  # type: ignore
         print(image.image_url)
 
     @app.command()
@@ -267,8 +267,8 @@ def create_cli(
         Prompt subcommand, start a docker container and drop the user inside a prompt
 
         """
-        docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
-        image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
+        env_config = get_env_config()
+        image = __create_image(__get_image_name_value(image_name), **env_config)  # type: ignore
         image.run(
             prompt=True,
             project_dir=project_dir,
@@ -297,8 +297,8 @@ def create_cli(
             ports (Optional[List[str]], optional): Port to forward from Docker. Defaults to None.
             volumes (Optional[List[str]], optional): Volume to mount. Defaults to None.
         """
-        docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
-        image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
+        env_config = get_env_config()
+        image = __create_image(__get_image_name_value(image_name), **env_config)  # type: ignore
         image.run(
             cmds=arguments,
             project_dir=project_dir,
@@ -317,8 +317,8 @@ def create_cli(
             ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
             volume: Optional[List[str]] = typer.Option(None, help="Volume to mount"),
         ) -> None:
-            docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
-            image = __create_image(__get_image_name_value(k), docker_registry_prefix)
+            env_config = get_env_config()
+            image = __create_image(__get_image_name_value(k), **env_config)
             image.run(
                 cmds=arguments,
                 project_dir=project_dir,

@@ -16,12 +16,18 @@ class DockerImage:
     and create containers.
     """
 
-    def __init__(self, docker_registry_prefix: str = "") -> None:
+    def __init__(self, docker_registry_prefix: str = "", **kwargs) -> None:
+        """Initialize the DockerImage object.
+
+        Args:
+            docker_registry_prefix (str, optional): The prefix of the Docker registry URL. Defaults to "".
+            **kwargs: Additional keyword arguments.
+        """
         self.docker_client = docker.from_env()
         self.name = "UNDEFINED"
         self.docker_folder = ""
         self.version = ""
-        self.repo_url = docker_registry_prefix or "unknown"
+        self.repo_url = docker_registry_prefix or None
 
     @staticmethod
     def _exec_cmd(cmd: List[str]) -> None:
