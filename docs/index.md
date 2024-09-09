@@ -32,6 +32,16 @@ install the project in editable mode and allow code development
 pip install -e .
 ```
 
+The above install steps are automated through the `make install` command.
+
+To interact with the CLI you still need to activate the new environment by doing
+
+```bash
+source vevn/bin/activate
+# Run the help command of the docker wrapper
+./venv/bin/docker_wrapper --help
+```
+
 ## Overview
 
 The goal of this library is to provide a convenient wrapper around Docker to allow
