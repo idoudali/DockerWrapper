@@ -11,7 +11,7 @@ import logging
 import os
 from pathlib import Path
 import subprocess
-from typing import Callable, Dict, List, NewType, Optional, Union
+from typing import Dict, List, NewType, Optional, Type, Union
 
 import typer
 
@@ -36,7 +36,7 @@ class LoggingLevel(str, Enum):
     DEBUG = "DEBUG"
 
 
-__WRAPPER_EXTENSIONS: Dict[str, Callable[[], docker_helpers.DockerImage]] = {}
+__WRAPPER_EXTENSIONS: Dict[str, Type[docker_helpers.DockerImage]] = {}
 __DOCKER_IMAGE_CLASS_NAME = "DockerImages"
 
 EnumClassType = NewType("EnumClassType", Enum)
@@ -61,7 +61,7 @@ def get_env_config() -> Dict[str, str]:
     return LOCAL_ENV_CONFIG
 
 
-def find_extensions(image_dir: Path) -> Dict[str, Callable[[], docker_helpers.DockerImage]]:
+def find_extensions(image_dir: Path) -> Dict[str, Type[docker_helpers.DockerImage]]:
     """Find all available Docker images and extension modules that enable working with them
 
     Args:
@@ -87,14 +87,14 @@ def find_extensions(image_dir: Path) -> Dict[str, Callable[[], docker_helpers.Do
     # Load the docker_wrapper_extensions.py, import it as a module and get a callable
     # object for the DockerImage class object that each file contains
     extensions = {}
-    for iname, ipath in docker_images.items():
+    for _, ipath in docker_images.items():
         spec = importlib.util.spec_from_file_location(
             "docker_wrapper_extensions", os.path.join(ipath, "docker_wrapper_extensions.py")
         )
         mod = importlib.util.module_from_spec(spec)  # type: ignore
         spec.loader.exec_module(mod)  # type: ignore
         docker_image_classes = []
-        for name, obj in inspect.getmembers(mod):
+        for _, obj in inspect.getmembers(mod):
             if inspect.isclass(obj) and issubclass(obj, docker_helpers.DockerImage):
                 docker_image_classes.append(obj)
                 # docker_image_classes contains the classes that are of type DockerImage
@@ -103,7 +103,7 @@ def find_extensions(image_dir: Path) -> Dict[str, Callable[[], docker_helpers.Do
     return extensions
 
 
-def __create_image(image_name: str, **kwargs) -> docker_helpers.DockerImage:
+def __create_image(image_name: str, **kwargs: Dict[str, str]) -> docker_helpers.DockerImage:
     """Instantiate an DockerImage object (or its subclass) for the specified
     Image
 
@@ -120,7 +120,7 @@ def __create_image(image_name: str, **kwargs) -> docker_helpers.DockerImage:
     if image_name not in __WRAPPER_EXTENSIONS:
         typer.echo(f"Unknown Image {image_name}")
         raise typer.Exit(1)
-    image = __WRAPPER_EXTENSIONS[image_name](**kwargs)
+    image = __WRAPPER_EXTENSIONS[image_name](**kwargs)  # type: ignore
     return image
 
 
@@ -139,15 +139,15 @@ def __get_image_name_value(image_name: Union[str, EnumClassType]) -> str:
 
 
 def create_cli(
-    image_dir: Optional[str] = None, env_config: Optional[Dict[str, str]] = {}  #
+    image_dir: Optional[str] = None, env_config_arg: Optional[Dict[str, str]] = None  #
 ) -> typer.Typer:
     """Create the command line interface of the Docker Wrapper
 
     Args:
         image_dir (Optional[str], optional): Directory where the Docker image Dockerfiles and
             related code are located. Defaults to None.
-        env_config (Optional[Dict[str, str]], optional): Configuration environment of the repository.
-            Dictionary containing environment configuration values.
+        env_config (Optional[Dict[str, str]], optional): Configuration environment of
+            the repository. Dictionary containing environment configuration values.
 
     Returns:
         typer.Typer: Typer class wit the registered command line arguments. See the main()
@@ -159,6 +159,7 @@ def create_cli(
     # Yet expect that the environment configuration could be ovewritten
     # past the creation state. For this reason use the get_env_config() function
     # to get the configuration at execution of each subcommand.
+    env_config = env_config_arg or {}
     set_env_config(env_config)
 
     images = {}
@@ -311,9 +312,10 @@ def create_cli(
             privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
             ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
             volume: Optional[List[str]] = typer.Option(None, help="Volume to mount"),
+            name: str = k,
         ) -> None:
             env_config = get_env_config()
-            image = __create_image(__get_image_name_value(k), **env_config)
+            image = __create_image(__get_image_name_value(name), **env_config)  # type: ignore
             image.run(
                 cmds=arguments,
                 project_dir=project_dir,
