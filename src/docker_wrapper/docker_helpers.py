@@ -16,11 +16,14 @@ class DockerImage:
     and create containers.
     """
 
-    def __init__(self, docker_registry_prefix: str = "", **kwargs) -> None:
+    NAME = "UNDEFINED"
+
+    def __init__(self, docker_registry_prefix: str = "", **kwargs: int) -> None:
         """Initialize the DockerImage object.
 
         Args:
-            docker_registry_prefix (str, optional): The prefix of the Docker registry URL. Defaults to "".
+            docker_registry_prefix (str, optional): The prefix of the Docker registry URL.
+                Defaults to "".
             **kwargs: Additional keyword arguments.
         """
         self.docker_client = docker.from_env()
@@ -196,8 +199,9 @@ class DockerImage:
                 "-v",
                 "/tmp/.X11-unix:/tmp/.X11-unix",
             ]
-        for v in volumes:
-            cmd += ["-v", v]
+        if volumes:
+            for v in volumes:
+                cmd += ["-v", v]
         if network:
             cmd += [f"--network={network}"]
         cmd += [

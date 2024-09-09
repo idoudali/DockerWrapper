@@ -1,5 +1,3 @@
-#!/bin/env python3
-
 #!/usr/bin/env python
 
 from pathlib import Path
@@ -43,7 +41,7 @@ if __name__ == "__main__":
         docker_wrapper.set_env_config(ENV_CONFIG)
 
     app.add_typer(
-        docker_wrapper.create_cli(image_dir="sample-images", env_config=ENV_CONFIG),
+        docker_wrapper.create_cli(image_dir="sample-images", env_config_arg=ENV_CONFIG),
         name="docker",
     )
 

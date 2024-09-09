@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Callable, Dict
+from typing import Dict, Type
 
 import pytest
 
@@ -9,7 +9,7 @@ from docker_wrapper import docker_helpers
 
 
 @pytest.fixture
-def image_registry() -> Dict[str, Callable[[], docker_helpers.DockerImage]]:
+def image_registry() -> Dict[str, Type[docker_helpers.DockerImage]]:
     # point to the sample_images directory
     test_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../sample-images")
     ext = docker_wrapper.cli.find_extensions(Path(test_path))
@@ -19,8 +19,8 @@ def image_registry() -> Dict[str, Callable[[], docker_helpers.DockerImage]]:
 def test_image_hash(image_registry) -> None:  # type: ignore
     assert "ubuntu_base" in image_registry
     image = image_registry["ubuntu_base"]()
-    assert image.image_hash[:10] == "0cf730bc19"
-    assert image.tagged_name == "ubuntu_base:0cf730bc19"
+    assert image.image_hash[:10] == "0d7a3669ae"
+    assert image.tagged_name == "ubuntu_base:0d7a3669ae"
 
 
 def test_image_prompt(image_registry, mocker) -> None:  # type: ignore
@@ -36,5 +36,5 @@ def test_image_prompt(image_registry, mocker) -> None:  # type: ignore
 def test_derived_image_hash(image_registry) -> None:  # type: ignore
     assert "ubuntu_derived" in image_registry
     image = image_registry["ubuntu_derived"]()
-    assert image.image_hash[:10] == "6012add877"
-    assert image.tagged_name == "ubuntu_derived:6012add877"
+    assert image.image_hash[:10] == "b50e8bc0f5"
+    assert image.tagged_name == "ubuntu_derived:b50e8bc0f5"
