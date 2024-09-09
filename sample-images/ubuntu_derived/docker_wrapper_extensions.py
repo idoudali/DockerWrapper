@@ -22,13 +22,15 @@ sys.path.append(PARENT_DIRECTORY)
 from ubuntu_base import docker_wrapper_extensions as parent_image  # noqa: E402
 
 
-class DockerImage(docker_wrapper.DockerImage):
+class UbuntuDerived(docker_wrapper.DockerImage):
     """DockerImage class of the ubuntu_derived image"""
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.parent = parent_image.DockerImage()
-        self.name = "ubuntu_derived"
+    NAME = "ubuntu_derived"
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.parent = parent_image.UbuntuBase()
+        self.name = UbuntuDerived.NAME
         self.docker_folder = os.path.realpath(
             os.path.join(os.path.realpath(__file__), "../Docker")
         )

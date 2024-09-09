@@ -6,16 +6,18 @@ from typing import List
 import docker_wrapper
 
 
-class DockerImage(docker_wrapper.DockerImage):
+class UbuntuBase(docker_wrapper.DockerImage):
     """ubuntu_base docker image
 
     Args:
         docker_wrapper (_type_): Parent class
     """
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.name = "ubuntu_base"
+    NAME = "ubuntu_base"
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.name = UbuntuBase.NAME
         self.docker_folder = os.path.realpath(
             os.path.join(os.path.realpath(__file__), "../Docker")
         )

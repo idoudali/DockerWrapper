@@ -102,8 +102,6 @@ def find_extensions(image_dir: Path) -> Dict[str, Callable[[], docker_helpers.Do
 
     return extensions
 
-    docker_registry = env_config.get("docker-registry-prefix", "")
-
 
 def __create_image(image_name: str, docker_registry_prefix: str) -> docker_helpers.DockerImage:
     """Instantiate an DockerImage object (or its subclass) for the specified
@@ -141,14 +139,15 @@ def __get_image_name_value(image_name: Union[str, EnumClassType]) -> str:
 
 
 def create_cli(
-    image_dir: Optional[str] = None, env_config: Optional[Dict[str, str]] = {}
+    image_dir: Optional[str] = None, env_config: Optional[Dict[str, str]] = {}  #
 ) -> typer.Typer:
     """Create the command line interface of the Docker Wrapper
 
     Args:
-        image_dir (Optional[str], optional): Direcotry where the Docker image Dockerfiles and
+        image_dir (Optional[str], optional): Directory where the Docker image Dockerfiles and
             related code are located. Defaults to None.
         env_config (Optional[Dict[str, str]], optional): Configuration environment of the repository.
+            Dictionary containing environment configuration values.
 
     Returns:
         typer.Typer: Typer class wit the registered command line arguments. See the main()
@@ -267,13 +266,6 @@ def create_cli(
         """
         Prompt subcommand, start a docker container and drop the user inside a prompt
 
-        Args:
-            image_name (image_names): Name of the image to use
-            project_dir (Path, optional): Path of the repo top-level. Defaults to ".".
-            privileged (bool, optional): Enable Docker privileged mode. Defaults to False.
-            ports (Optional[List[str]], optional): Port to forward from Docker. Defaults to None.
-            network (Optional[str], optional): Pass the network information. Defaults to None.
-            volumes (Optional[List[str]], optional): Volume to mount. Defaults to None.
         """
         docker_registry_prefix = get_env_config().get("docker-registry-prefix", "")
         image = __create_image(__get_image_name_value(image_name), docker_registry_prefix)  # type: ignore
