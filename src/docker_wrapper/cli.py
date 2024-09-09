@@ -262,6 +262,7 @@ def create_cli(
         privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
         ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
         volume: Optional[List[str]] = typer.Option(None, help="Volume to mount"),
+        sudo: bool = typer.Option(True, help="Enable sudo inside the container"),
     ) -> None:
         """
         Prompt subcommand, start a docker container and drop the user inside a prompt
@@ -276,6 +277,7 @@ def create_cli(
             privileged=privileged,
             ports=ports,
             volumes=volume,
+            enable_sudo=sudo,
         )
 
     @app.command()
@@ -286,17 +288,9 @@ def create_cli(
         privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
         ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
         volume: Optional[List[str]] = typer.Option(None, help="Volume to mount"),
+        sudo: bool = typer.Option(True, help="Enable sudo inside the container"),
     ) -> None:
-        """Run the following command inside the container
-
-        Args:
-            image_name (image_names): Name of the image to create a container from
-            arguments (List[str]): Commands to run inside the container
-            project_dir (Path, optional): Path of the repo top-level. Defaults to ".".
-            privileged (bool, optional): Enable Docker privileged mode. Defaults to False.
-            ports (Optional[List[str]], optional): Port to forward from Docker. Defaults to None.
-            volumes (Optional[List[str]], optional): Volume to mount. Defaults to None.
-        """
+        """Run the following command inside the container"""
         env_config = get_env_config()
         image = __create_image(__get_image_name_value(image_name), **env_config)  # type: ignore
         image.run(
@@ -305,6 +299,7 @@ def create_cli(
             privileged=privileged,
             ports=ports,
             volumes=volume,
+            enable_sudo=sudo,
         )
 
     for k in images.keys():
