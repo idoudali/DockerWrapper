@@ -140,7 +140,6 @@ class DockerImage:
         prompt: bool = False,
         cmds: Optional[List[str]] = None,
         network: Optional[str] = None,
-        nvidia_docker: bool = False,
         privileged: bool = False,
         enable_gui: bool = False,
         ports: Optional[List[str]] = None,
@@ -158,8 +157,6 @@ class DockerImage:
                 Defaults to None.
             network (Optional[str], optional): Name of the network to connect the container to.
                 Defaults to None.
-            nvidia_docker (bool, optional): Use nvidia-docker to enable GPU use.
-                Defaults to False.
             privileged (bool, optional): Enable privileged mode. Defaults to False.
             enable_gui (bool, optional): Enable support for starting GUI apps inside the container.
                 Defaults to False.
@@ -178,7 +175,7 @@ class DockerImage:
         username = getpass.getuser()
         logging.debug("uid:{}, gid:{}, username:{}".format(uid, gid, username))
         home_dir = os.path.expanduser("~")
-        cmd = ["nvidia-docker"] if nvidia_docker else ["docker"]
+        cmd = ["docker"]
         cmd += ["run", "--rm", "--hostname=Docker"]
         project_realpath = os.path.realpath(project_dir)
         if privileged:
