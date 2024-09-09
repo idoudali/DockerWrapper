@@ -150,6 +150,7 @@ class DockerImage:
         enable_gui: bool = False,
         ports: Optional[List[str]] = None,
         volumes: Optional[List[str]] = None,
+        enable_sudo: bool = False,
     ) -> None:
         """Run a container from the Docker Image
 
@@ -158,7 +159,6 @@ class DockerImage:
                 Mount the volume inside the container
             prompt (bool, optional): Iff true start the container in interactive mode and
                 start a prompt to provide to the user. Defaults to False.
-
             cmds (Optional[List[str]], optional): List of commands to run inside the container.
                 Defaults to None.
             network (Optional[str], optional): Name of the network to connect the container to.
@@ -168,6 +168,9 @@ class DockerImage:
                 Defaults to False.
             ports (Optional[List[str]], optional): List of ports to enable to open from the
                 container. Defaults to None.
+            volumes (Optional[List[str]], optional): List of volumes to mount inside the container.
+            enable_sudo (bool, optional): Enable sudo inside the container. Defaults to False. This
+                option mounts the sudoers file inside the container.
         """
         if not (bool(prompt) ^ bool(cmds)):
             raise RuntimeError("Either or neither prompt or cmds are set, only one could be set")
@@ -198,12 +201,14 @@ class DockerImage:
         if network:
             cmd += [f"--network={network}"]
         cmd += [
-            "-e",
-            "UID={}".format(uid),
-            "-e",
-            "GID={}".format(gid),
-            "-e",
-            "USERNAME={}".format(username),
+            "-v",
+            "/etc/group:/etc/group:ro",
+            "-v",
+            "/etc/passwd:/etc/passwd:ro",
+            "-v",
+            "/etc/shadow:/etc/shadow:ro",
+            "-u",
+            f"{uid}:{gid}",
             "-e",
             f"SRC_DIR={project_realpath}",
         ]
@@ -213,6 +218,10 @@ class DockerImage:
 
         if prompt:
             cmd += ["-t", "-i", "-e", "PROMPT=1"]
+
+        # Enable sudo
+        if enable_sudo:
+            cmd += ["-v", "/etc/sudoers.d:/etc/sudoers.d:ro"]
 
         cmd += self.get_docker_run_args()
         cmd += [
