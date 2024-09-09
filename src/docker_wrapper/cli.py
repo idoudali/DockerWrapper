@@ -321,7 +321,6 @@ def create_cli(
         def run_image(
             arguments: List[str],
             project_dir: Path = typer.Option(".", help="Path of the repo top-level"),
-            nvidia_docker: bool = typer.Option(False, help="Use NVidia-docker"),
             privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
             ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
             volume: Optional[List[str]] = typer.Option(None, help="Volume to mount"),
@@ -331,7 +330,6 @@ def create_cli(
             image.run(
                 cmds=arguments,
                 project_dir=project_dir,
-                nvidia_docker=nvidia_docker,
                 privileged=privileged,
                 ports=ports,
                 volumes=volume,
