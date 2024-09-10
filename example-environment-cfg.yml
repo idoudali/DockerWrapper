@@ -4,12 +4,13 @@
 # This file contains configuration information regarding the
 # different environments: e.g. names of services to use
 AWS:
-  docker-registry-prefix: ECR-REGISTRY.amazonaws.com/myprefix-
-  docker-login-command: "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ECR-REGISTRY.amazonaws.com"
+  # Docker wrapper extension
+  docker_registry_prefix: ECR-REGISTRY.amazonaws.com/myprefix-
+  docker_login_command: "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ECR-REGISTRY.amazonaws.com"
   other-option: s3
 
 # The below are placeholders for the actual values
 local:
   docker-registry-prefix: ""
-  docker-login-command: "echo no login required"
+  docker_login_command: "echo no login required"
   other-option: s3
