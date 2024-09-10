@@ -197,7 +197,7 @@ def create_cli(
         global __WRAPPER_EXTENSIONS
         __WRAPPER_EXTENSIONS = find_extensions(image_dir)
 
-        docker_login_cmd = get_env_config().get("docker-login-command", "")
+        docker_login_cmd = get_env_config().get("docker_login_command", "")
 
         if docker_login_cmd:
             logging.info("Performing docker login")
