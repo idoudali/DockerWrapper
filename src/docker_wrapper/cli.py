@@ -22,11 +22,15 @@ LOCAL_ENV_CONFIG = {}
 
 
 class LoggingLevel(str, Enum):
-    """Enum holding the different logging argument values.
+    """
+    Enum holding the different logging argument values.
 
-    Args:
-        str (_type_): String Enumeration
-        Enum (_type_): Enum
+    Attributes:
+        CRITICAL (str): Represents the 'CRITICAL' logging level.
+        ERROR (str): Represents the 'ERROR' logging level.
+        WARNING (str): Represents the 'WARNING' logging level.
+        INFO (str): Represents the 'INFO' logging level.
+        DEBUG (str): Represents the 'DEBUG' logging level.
     """
 
     CRITICAL = "CRITICAL"
@@ -109,7 +113,7 @@ def __create_image(image_name: str, **kwargs: Dict[str, str]) -> docker_helpers.
 
     Args:
         image_name (str): Name of the image to create an image for.
-        docker_registry_prefix (str): Docker registry prefix
+        **kwargs (Dict[str, str]): Additional arguments to pass to the DockerImage object.
 
     Raises:
         typer.Exit: Failure if the image is not found
@@ -146,7 +150,7 @@ def create_cli(
     Args:
         image_dir (Optional[str], optional): Directory where the Docker image Dockerfiles and
             related code are located. Defaults to None.
-        env_config (Optional[Dict[str, str]], optional): Configuration environment of
+        env_config_arg (Optional[Dict[str, str]], optional): Configuration environment of
             the repository. Dictionary containing environment configuration values.
 
     Returns:

@@ -1,5 +1,5 @@
 # `docker_wrapper` API Documentation
 
-::: docker_wrapper
-::: ubuntu_base
-::: ubuntu_derived
+::: docker_wrapper.docker_helpers
+::: docker_wrapper.cli
+
