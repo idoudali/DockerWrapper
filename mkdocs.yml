@@ -5,10 +5,6 @@ theme:
   # By default, fonts are pulled from Google on the Internet. To support offline usage, this is
   # disabled.
   font: false
-  # palette:
-  #   scheme: slate
-  #   primary: black
-  #   accent: yellow
   icon:
     logo: material/math-integral-box
     # GitHub specific.
@@ -37,25 +33,33 @@ use_directory_urls: false
 plugins:
   - search
   - mkdocstrings:
-      handlers:
+      handlers: 
         python:
           setup_commands:
             - import sys
             - sys.path.append("src")
             - sys.path.append("sample-images")
-      watch:
-          - src
-          - sample-images
+          load_external_modules: true
+          options:
+            show_bases: true
+            allow_inspection: true
+            show_inheritance_diagram: true
+            show_source: true
+          paths:
+            - src
+            - sample-images
+      # handlers:
+      #   python:
+      #     setup_commands:
+      #       - import sys
+      #       - sys.path.append("src")
+      #       - sys.path.append("sample-images")
   # This plugin is used to validate URLs (including some anchors).
   # Uncomment to build the docs with this validation enabled.
   # This is commented out by default because this requires network I/O to validate URLs, so it is
   # inherently not exactly reproducible. But this plugin is none-the-less helpful at detecting
   # incorrect URLs.
-#  - htmlproofer:
-#      raise_error: True
 site_name: Docker Wrapper
 copyright: Copyright &copy; 2022 Ioannis Doudalis
 # GitHub Specific Configuration.
 repo_name: docker_wrapper
-# repo_url: https://github.com/johnthagen/python-blueprint
-edit_uri: edit/master/docs/user_guide/docs/
