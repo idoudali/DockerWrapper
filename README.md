@@ -6,8 +6,11 @@
 This repo contains a python helper library that allows us to automate
 a number of workflow actions when interacting with Docker.
 
-For details see the [documentation](./docs/index.md).
+For details see the rest of the [documentation](./docs/index.md).
 
+# Documentation
+
+HTML rendered documentation is available at [DockerWrapper](https://idoudali.github.io/DockerWrapper/).
 
 # Quick Start
 
