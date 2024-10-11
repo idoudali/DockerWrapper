@@ -34,8 +34,4 @@ jobs:
         run: tox -e build
       - name: Test with tox
         run: tox
-      - name: Step 3 - Use the Upload Artifact GitHub Action
-        uses: actions/upload-artifact@v2
-        with:
-          name: Artifacts
-          path: dist/*
+
