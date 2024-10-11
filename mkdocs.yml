@@ -32,6 +32,21 @@ extra:
 use_directory_urls: false
 plugins:
   - search
+  - simple:
+      merge_docs_dir: false
+      folders:
+        - '*'
+        - docs/**
+      ignore:
+      - '*.egg-info'
+      - venv
+      - .cache/**
+      - .devcontainer/**
+      - .github/**
+      - .vscode/**
+      - '**/__pycache__/**'
+      - .git/**
+      - .tox/**
   - mkdocstrings:
       handlers: 
         python:

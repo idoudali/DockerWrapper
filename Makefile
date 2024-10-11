@@ -10,7 +10,7 @@ compile-requirements: ## compile requirements from .in files to .txt files
 
 
 # Create virtual environment and install requirements
-venv/bin/activate: ## create virtual environment and install requirements
+venv/bin/activate: requirements.txt requirements.dev.txt ## create virtual environment and install requirements
 	python3 -m venv venv
 	source venv/bin/activate && pip install -r requirements.txt
 	source venv/bin/activate && pip install -r requirements.dev.txt
