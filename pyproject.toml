@@ -36,3 +36,10 @@ version_scheme = "pep440"
 version = "0.0.1"
 update_changelog_on_bump = true
 major_version_zero = true
+
+
+[tool.semantic_release]
+version_variables = ["setup.py:__version__"]
+
+[tool.semantic_release.commit_parser_options]
+allowed_tags = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "style", "refactor", "test"]
