@@ -11,8 +11,10 @@ import logging
 import os
 from pathlib import Path
 import subprocess
+import typing
 from typing import Dict, List, NewType, Optional, Type, Union
 
+import forge
 import typer
 
 from . import docker_helpers
@@ -259,9 +261,10 @@ def create_cli(
         image = __create_image(__get_image_name_value(image_name), **env_config)  # type: ignore
         print(image.image_url)
 
-    @app.command()
-    def prompt(
+    def _start_docker_helper(
+        prompt: bool,
         image_name: image_names,
+        cmds: List[str],
         project_dir: Path = typer.Option(".", help="Path of the repo top-level"),
         network: Optional[str] = typer.Option(None, help="Pass the network information."),
         privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
@@ -270,13 +273,13 @@ def create_cli(
         sudo: bool = typer.Option(True, help="Enable sudo inside the container"),
     ) -> None:
         """
-        Prompt subcommand, start a docker container and drop the user inside a prompt
-
+        Helper function that start a container and drop the user inside a prompt or run a command
         """
         env_config = get_env_config()
         image = __create_image(__get_image_name_value(image_name), **env_config)  # type: ignore
         image.run(
-            prompt=True,
+            prompt=prompt,
+            cmds=cmds,
             project_dir=project_dir,
             network=network,
             privileged=privileged,
@@ -285,48 +288,42 @@ def create_cli(
             enable_sudo=sudo,
         )
 
+    @typing.no_type_check
     @app.command()
-    def run(
-        image_name: image_names,
-        arguments: List[str],
-        project_dir: Path = typer.Option(".", help="Path of the repo top-level"),
-        privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
-        ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
-        volume: Optional[List[str]] = typer.Option(None, help="Volume to mount"),
-        sudo: bool = typer.Option(True, help="Enable sudo inside the container"),
-    ) -> None:
+    @forge.compose(  #
+        forge.copy(_start_docker_helper),  #
+        forge.delete("prompt"),  #
+        forge.delete("cmds"),  #
+    )
+    def prompt(*args, **kwargs) -> None:
+        """Start a docker container and drop the user inside a prompt"""
+        _start_docker_helper(prompt=True, cmds=[], *args, **kwargs)  # noqa: B026
+
+    @typing.no_type_check
+    @app.command()
+    @forge.compose(  #
+        forge.copy(_start_docker_helper),  #
+        forge.delete("prompt"),  #
+    )
+    def run(*args, **kwargs):
         """Run the following command inside the container"""
-        env_config = get_env_config()
-        image = __create_image(__get_image_name_value(image_name), **env_config)  # type: ignore
-        image.run(
-            cmds=arguments,
-            project_dir=project_dir,
-            privileged=privileged,
-            ports=ports,
-            volumes=volume,
-            enable_sudo=sudo,
+        _start_docker_helper(False, *args, **kwargs)
+
+    for name in images.keys():
+
+        @typing.no_type_check
+        @app.command(name)
+        @forge.compose(  #
+            forge.copy(_start_docker_helper),  #
+            forge.delete("prompt"),  #
+            forge.delete("image_name"),
         )
-
-    for k in images.keys():
-
-        @app.command(k)
         def run_image(
-            arguments: List[str],
-            project_dir: Path = typer.Option(".", help="Path of the repo top-level"),
-            privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
-            ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
-            volume: Optional[List[str]] = typer.Option(None, help="Volume to mount"),
-            name: str = k,
+            iname: str = name,
+            *args,
+            **kwargs,
         ) -> None:
-            env_config = get_env_config()
-            image = __create_image(__get_image_name_value(name), **env_config)  # type: ignore
-            image.run(
-                cmds=arguments,
-                project_dir=project_dir,
-                privileged=privileged,
-                ports=ports,
-                volumes=volume,
-            )
+            _start_docker_helper(False, image_name=iname, *args, **kwargs)  # noqa: B026
 
     return app
 

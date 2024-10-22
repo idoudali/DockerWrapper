@@ -14,6 +14,7 @@ venv/bin/activate: requirements.txt requirements.dev.txt ## create virtual envir
 	python3 -m venv venv
 	source venv/bin/activate && pip install -r requirements.txt
 	source venv/bin/activate && pip install -r requirements.dev.txt
+	source venv/bin/activate && pip install -e .
 
 .PHONY: venv
 venv: venv/bin/activate ## create virtual environment and install requirements
