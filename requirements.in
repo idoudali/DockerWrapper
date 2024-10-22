@@ -3,3 +3,4 @@ checksumdir
 colorama >= 0.4.0
 docker
 typer
+python-forge >= v18.6.0
