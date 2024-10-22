@@ -271,6 +271,7 @@ def create_cli(
         privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
         ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
         volume: Optional[List[str]] = typer.Option(None, help="Volume to mount"),
+        env: Optional[List[str]] = typer.Option(None, help="Environment variables to pass"),
         sudo: bool = typer.Option(True, help="Enable sudo inside the container"),
     ) -> None:
         """
@@ -281,11 +282,13 @@ def create_cli(
         image.run(
             prompt=prompt,
             cmds=cmds,
+            mount_home=mount_home,
             project_dir=project_dir,
             network=network,
             privileged=privileged,
             ports=ports,
             volumes=volume,
+            envs=env,
             enable_sudo=sudo,
         )
 
