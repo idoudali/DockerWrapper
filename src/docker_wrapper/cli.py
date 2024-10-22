@@ -265,6 +265,7 @@ def create_cli(
         prompt: bool,
         image_name: image_names,
         cmds: List[str],
+        mount_home: bool = typer.Option(False, help="Mount the home directory"),
         project_dir: Path = typer.Option(".", help="Path of the repo top-level"),
         network: Optional[str] = typer.Option(None, help="Pass the network information."),
         privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),

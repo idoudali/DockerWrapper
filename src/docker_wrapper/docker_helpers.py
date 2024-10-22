@@ -147,6 +147,7 @@ class DockerImage:
         self,
         project_dir: Path,
         prompt: bool = False,
+        mount_home: bool = False,
         cmds: Optional[List[str]] = None,
         network: Optional[str] = None,
         privileged: bool = False,
@@ -228,9 +229,12 @@ class DockerImage:
             cmd += ["-v", "/etc/sudoers.d:/etc/sudoers.d:ro"]
 
         cmd += self.get_docker_run_args()
+        if mount_home:
+            cmd += [
+                "-v",
+                home_dir + ":" + home_dir,
+            ]
         cmd += [
-            "-v",
-            home_dir + ":" + home_dir,
             "-v",
             f"{project_realpath}:{project_realpath}",
             image_url,
