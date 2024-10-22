@@ -154,6 +154,7 @@ class DockerImage:
         enable_gui: bool = False,
         ports: Optional[List[str]] = None,
         volumes: Optional[List[str]] = None,
+        envs: Optional[List[str]] = None,
         enable_sudo: bool = False,
     ) -> None:
         """Run a container from the Docker Image
@@ -234,6 +235,9 @@ class DockerImage:
                 "-v",
                 home_dir + ":" + home_dir,
             ]
+        if envs:
+            for env in envs:
+                cmd += ["-e", env]
         cmd += [
             "-v",
             f"{project_realpath}:{project_realpath}",
