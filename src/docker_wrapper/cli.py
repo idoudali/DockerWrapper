@@ -273,6 +273,11 @@ def create_cli(
         volume: Optional[List[str]] = typer.Option(None, help="Volume to mount"),
         env: Optional[List[str]] = typer.Option(None, help="Environment variables to pass"),
         sudo: bool = typer.Option(True, help="Enable sudo inside the container"),
+        mount_host_passwd: bool = typer.Option(
+            True,
+            help="Mount the host passwd related files inside the container and use the "
+            + "`-u` docker option",
+        ),
     ) -> None:
         """
         Helper function that start a container and drop the user inside a prompt or run a command
@@ -290,6 +295,7 @@ def create_cli(
             volumes=volume,
             envs=env,
             enable_sudo=sudo,
+            mount_host_passwd=mount_host_passwd,
         )
 
     @typing.no_type_check

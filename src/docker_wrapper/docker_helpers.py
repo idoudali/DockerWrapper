@@ -141,6 +141,11 @@ class DockerImage:
             return False
 
     def get_docker_run_args(self) -> List[str]:
+        """Return the list of additional arguments to pass to the docker run command
+
+        This function should be overridden by the child classes to provide
+        the necessary arguments.
+        """
         return []
 
     def run(
@@ -156,6 +161,7 @@ class DockerImage:
         volumes: Optional[List[str]] = None,
         envs: Optional[List[str]] = None,
         enable_sudo: bool = False,
+        mount_host_passwd: bool = True,
     ) -> None:
         """Run a container from the Docker Image
 
@@ -176,6 +182,8 @@ class DockerImage:
             volumes (Optional[List[str]], optional): List of volumes to mount inside the container.
             enable_sudo (bool, optional): Enable sudo inside the container. Defaults to False. This
                 option mounts the sudoers file inside the container.
+            mount_host_passwd (bool, optional): Mount the host passwd related files inside the
+                container and make use of the `-u` Docker option to map the user to the host user.
         """
         if not (bool(prompt) ^ bool(cmds)):
             raise RuntimeError("Either or neither prompt or cmds are set, only one could be set")
@@ -206,15 +214,23 @@ class DockerImage:
                 cmd += ["-v", v]
         if network:
             cmd += [f"--network={network}"]
+        if mount_host_passwd:
+            cmd += [
+                "-v",
+                "/etc/group:/etc/group:ro",
+                "-v",
+                "/etc/passwd:/etc/passwd:ro",
+                "-v",
+                "/etc/shadow:/etc/shadow:ro",
+                "-u",
+                f"{uid}:{gid}",
+            ]
+
+            # Enable sudo only if we are mounting host password files
+            if enable_sudo:
+                cmd += ["-v", "/etc/sudoers.d:/etc/sudoers.d:ro"]
+
         cmd += [
-            "-v",
-            "/etc/group:/etc/group:ro",
-            "-v",
-            "/etc/passwd:/etc/passwd:ro",
-            "-v",
-            "/etc/shadow:/etc/shadow:ro",
-            "-u",
-            f"{uid}:{gid}",
             "-e",
             f"SRC_DIR={project_realpath}",
         ]
@@ -224,10 +240,6 @@ class DockerImage:
 
         if prompt:
             cmd += ["-t", "-i", "-e", "PROMPT=1"]
-
-        # Enable sudo
-        if enable_sudo:
-            cmd += ["-v", "/etc/sudoers.d:/etc/sudoers.d:ro"]
 
         cmd += self.get_docker_run_args()
         if mount_home:
