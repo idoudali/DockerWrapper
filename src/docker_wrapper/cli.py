@@ -206,8 +206,26 @@ def create_cli(
         docker_login_cmd = get_env_config().get("docker_login_command", "")
 
         if docker_login_cmd:
-            logging.info("Performing docker login")
-            subprocess.run(docker_login_cmd, shell=True, check=True)
+            try:
+                # Log the command safely
+                if (
+                    "password" not in docker_login_cmd.lower()
+                    and "token" not in docker_login_cmd.lower()
+                ):
+                    logging.info(f"Executing docker login command: {docker_login_cmd}")
+                else:
+                    logging.info("Executing docker login command (redacted for safety)")
+
+                # Capture and log the output of the command
+                result = subprocess.run(
+                    docker_login_cmd, shell=True, check=True, text=True, capture_output=True
+                )
+                logging.info(f"Docker login output: {result.stdout}")
+            except subprocess.CalledProcessError as e:
+                logging.warning(f"Docker login failed with error: {e}")
+                if e.stderr:
+                    logging.warning(f"Error details: {e.stderr}")
+                logging.warning("Continuing with starting the container")
 
     @app.command()
     def build(
