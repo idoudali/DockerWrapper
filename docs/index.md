@@ -10,37 +10,21 @@
 
 ## Installation
 
-First, create and activate a Python virtual environment:
-
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-Then install the `docker_wrapper` package:
+Install [uv](https://docs.astral.sh/uv/), then sync the project environment
+(runtime, development, and docs groups):
 
 ```bash
-pip install .
+uv sync --all-groups
 ```
 
-When you are actively developing the module code use the ``-e`` option to
-install the project in editable mode and allow code development
-
+The same step is available as `make install`. To interact with the CLI:
 
 ```bash
-pip install -e .
+uv run docker_wrapper --help
 ```
 
-The above install steps are automated through the `make install` command.
-
-To interact with the CLI you still need to activate the new environment by doing
-
-```bash
-source vevn/bin/activate
-# Run the help command of the docker wrapper
-./venv/bin/docker_wrapper --help
-```
+Consumer repositories should add this package with `uv add docker-wrapper`
+(or a path/git dependency) rather than a `requirements.txt` pin.
 
 ## Overview
 
@@ -67,7 +51,7 @@ A CLI interface is implemented under [cli.py](/src/docker_wrapper/cli.py) the us
 
 ## Usage Mode
 
-The intent is for this library to be part of `requirements.txt` file of each repo and be consumed
+The intent is for this library to be a uv dependency of each repo and be consumed
 by the `repo-cli.py` script ( or any other entrypoint script ) of the repo. Then in each repo
 we are doing to define a `docker-images` folder, similar to [sample-images](/sample-images) folder of
 this folder.
@@ -91,17 +75,12 @@ to that docker image. Inside that file we are defining a `DockerImage` class as 
 
 ```python
 import os
-from typing import List
 
 import docker_wrapper
 
 
 class DockerImage(docker_wrapper.DockerImage):
-    """ubuntu_base docker image
-
-    Args:
-        docker_wrapper (_type_): Parent class
-    """
+    """ubuntu_base docker image."""
 
     def __init__(self) -> None:
         super().__init__()

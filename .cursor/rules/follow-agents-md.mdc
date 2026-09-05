@@ -1,0 +1,7 @@
+---
+description: Defer to AGENTS.md for all repository conventions
+alwaysApply: true
+---
+
+Read and follow all instructions, architecture guidelines, and coding standards
+defined in the `AGENTS.md` file at the root of this repository.

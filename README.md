@@ -14,26 +14,21 @@ HTML rendered documentation is available at [DockerWrapper](https://idoudali.git
 
 # Quick Start
 
-To work on this repo ensure that you have installed `commitizen` and `pre-commit`
-in your environment:
-
-References:
-
-* [pre-commit](https://pre-commit.com/)
-* [commitizen](https://commitizen-tools.github.io/commitizen/)
-* [pip-tools](https://github.com/jazzband/pip-tools)
-
-For example, to install the tools in your user environment:
+Install [uv](https://docs.astral.sh/uv/), then set up the project environment
+and git hooks:
 
 ```bash
-pip install --user commitizen pre-commit pip-tools
+uv sync --all-groups
+uv run pre-commit install
+uv run pre-commit install --hook-type pre-push
 ```
 
-Read the [commitizen](https://commitizen-tools.github.io/commitizen/) documentation
-regarding the type and quality of commits that we want to have in this repo.
-
-In summary use
+Use conventional commits via commitizen:
 
 ```bash
-cz commit # To write a new commit
+uv run cz commit
 ```
+
+`make install`, `make check`, `make fmt`, `make test`, and `make docs` wrap
+the same uv commands. Agent and contributor guidelines live in
+[`AGENTS.md`](AGENTS.md).

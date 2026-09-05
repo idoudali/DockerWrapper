@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Dict, Type
 
 import pytest
 
@@ -9,7 +8,7 @@ from docker_wrapper import docker_helpers
 
 
 @pytest.fixture
-def image_registry() -> Dict[str, Type[docker_helpers.DockerImage]]:
+def image_registry() -> dict[str, type[docker_helpers.DockerImage]]:
     # point to the sample_images directory
     test_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../sample-images")
     ext = docker_wrapper.cli.find_extensions(Path(test_path))

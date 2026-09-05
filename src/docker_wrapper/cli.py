@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-"""Command line interface of the Docker Wrapper module
-"""
+"""Command line interface of the Docker Wrapper module."""
 
 from enum import Enum
 import importlib
@@ -12,7 +11,7 @@ import os
 from pathlib import Path
 import subprocess
 import typing
-from typing import Dict, List, NewType, Optional, Type, Union
+from typing import NewType
 
 import forge
 import typer
@@ -20,12 +19,11 @@ import typer
 from . import docker_helpers
 
 _LOG_LEVEL_STRINGS = ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]
-LOCAL_ENV_CONFIG = {}
+LOCAL_ENV_CONFIG: dict[str, str] = {}
 
 
 class LoggingLevel(str, Enum):
-    """
-    Enum holding the different logging argument values.
+    """Enum holding the different logging argument values.
 
     Attributes:
         CRITICAL (str): Represents the 'CRITICAL' logging level.
@@ -42,14 +40,14 @@ class LoggingLevel(str, Enum):
     DEBUG = "DEBUG"
 
 
-__WRAPPER_EXTENSIONS: Dict[str, Type[docker_helpers.DockerImage]] = {}
+__WRAPPER_EXTENSIONS: dict[str, type[docker_helpers.DockerImage]] = {}
 __DOCKER_IMAGE_CLASS_NAME = "DockerImages"
 
 EnumClassType = NewType("EnumClassType", Enum)
 
 
-def set_env_config(config: Dict[str, str]) -> None:
-    """Set the configuration of the repository
+def set_env_config(config: dict[str, str]) -> None:
+    """Set the configuration of the repository.
 
     Args:
         config (Dict[str, str]): Configuration of the repository
@@ -58,8 +56,8 @@ def set_env_config(config: Dict[str, str]) -> None:
     LOCAL_ENV_CONFIG = config
 
 
-def get_env_config() -> Dict[str, str]:
-    """Get the configuration of the repository
+def get_env_config() -> dict[str, str]:
+    """Get the configuration of the repository.
 
     Returns:
         Dict[str, str]: Configuration of the repository
@@ -67,8 +65,8 @@ def get_env_config() -> Dict[str, str]:
     return LOCAL_ENV_CONFIG
 
 
-def find_extensions(image_dir: Path) -> Dict[str, Type[docker_helpers.DockerImage]]:
-    """Find all available Docker images and extension modules that enable working with them
+def find_extensions(image_dir: Path) -> dict[str, type[docker_helpers.DockerImage]]:
+    """Find all available Docker images and extension modules that enable working with them.
 
     Args:
         image_dir (Path): Path containing the docker images.
@@ -109,16 +107,15 @@ def find_extensions(image_dir: Path) -> Dict[str, Type[docker_helpers.DockerImag
     return extensions
 
 
-def __create_image(image_name: str, **kwargs: Dict[str, str]) -> docker_helpers.DockerImage:
-    """Instantiate an DockerImage object (or its subclass) for the specified
-    Image
+def __create_image(image_name: str, **kwargs: dict[str, str]) -> docker_helpers.DockerImage:
+    """Instantiate a DockerImage object (or subclass) for the named image.
 
     Args:
         image_name (str): Name of the image to create an image for.
         **kwargs (Dict[str, str]): Additional arguments to pass to the DockerImage object.
 
     Raises:
-        typer.Exit: Failure if the image is not found
+        typer.Exit: Failure if the image is not found.
 
     Returns:
         docker_helpers.DockerImage: Docker image object to be used to interact with it.
@@ -130,8 +127,8 @@ def __create_image(image_name: str, **kwargs: Dict[str, str]) -> docker_helpers.
     return image
 
 
-def __get_image_name_value(image_name: Union[str, EnumClassType]) -> str:
-    """Get the string value of image_name
+def __get_image_name_value(image_name: str | EnumClassType) -> str:
+    """Get the string value of image_name.
 
     Args:
         image_name (Union[str, EnumClassType]): Value returned by the CLI
@@ -145,9 +142,10 @@ def __get_image_name_value(image_name: Union[str, EnumClassType]) -> str:
 
 
 def create_cli(
-    image_dir: Optional[str] = None, env_config_arg: Optional[Dict[str, str]] = None  #
+    image_dir: str | None = None,
+    env_config_arg: dict[str, str] | None = None,  #
 ) -> typer.Typer:
-    """Create the command line interface of the Docker Wrapper
+    """Create the command line interface of the Docker Wrapper.
 
     Args:
         image_dir (Optional[str], optional): Directory where the Docker image Dockerfiles and
@@ -183,7 +181,7 @@ def create_cli(
         image_dir: Path = typer.Option(image_dir, help="Path where the docker images are located"),
         log_level: LoggingLevel = typer.Option(LoggingLevel.INFO, help="Set logging level"),
     ) -> None:
-        """Main command arguments
+        """Main command arguments.
 
         Args:
             image_dir (Path, optional): Path where images are stored.
@@ -193,12 +191,14 @@ def create_cli(
         """
         # Configure the logging level of the run
         if log_level not in _LOG_LEVEL_STRINGS:
-            message = "invalid choice: {0} (choose from {1})".format(log_level, _LOG_LEVEL_STRINGS)
+            message = f"invalid choice: {log_level} (choose from {_LOG_LEVEL_STRINGS})"
             typer.echo(message)
             typer.Exit(code=1)
         log_level_int = getattr(logging, log_level, logging.INFO)
-        # check the logging log_level_choices have not changed from our expected values
-        assert isinstance(log_level_int, int)
+        if not isinstance(log_level_int, int):
+            message = f"invalid logging level: {log_level}"
+            typer.echo(message)
+            raise typer.Exit(code=1)
         logging.basicConfig(level=log_level_int)
         global __WRAPPER_EXTENSIONS
         __WRAPPER_EXTENSIONS = find_extensions(image_dir)
@@ -217,7 +217,7 @@ def create_cli(
                     logging.info("Executing docker login command (redacted for safety)")
 
                 # Capture and log the output of the command
-                result = subprocess.run(
+                result = subprocess.run(  # noqa: S602
                     docker_login_cmd, shell=True, check=True, text=True, capture_output=True
                 )
                 logging.info(f"Docker login output: {result.stdout}")
@@ -231,7 +231,7 @@ def create_cli(
     def build(
         image_name: image_names,
     ) -> None:
-        """Build a docker image
+        """Build a docker image.
 
         Args:
             image_name (image_names): Name of the image to build
@@ -244,7 +244,7 @@ def create_cli(
     def push(
         image_name: image_names,
     ) -> None:
-        """Push a Docker image to a Docker registry
+        """Push a Docker image to a Docker registry.
 
         Args:
             image_name (image_names): Name of the image to push
@@ -257,7 +257,7 @@ def create_cli(
     def pull(
         image_name: image_names,
     ) -> None:
-        """Pull a docker image form a Docker registry
+        """Pull a docker image form a Docker registry.
 
         Args:
             image_name (image_names): Name of the image to pull
@@ -270,7 +270,7 @@ def create_cli(
     def image_url(
         image_name: image_names,
     ) -> None:
-        """URL of the image to use
+        """URL of the image to use.
 
         Args:
             image_name (image_names): Name of the image to pull
@@ -282,14 +282,14 @@ def create_cli(
     def _start_docker_helper(
         prompt: bool,
         image_name: image_names,
-        cmds: List[str],
+        cmds: list[str],
         mount_home: bool = typer.Option(False, help="Mount the home directory"),
         project_dir: Path = typer.Option(".", help="Path of the repo top-level"),
-        network: Optional[str] = typer.Option(None, help="Pass the network information."),
+        network: str | None = typer.Option(None, help="Pass the network information."),
         privileged: bool = typer.Option(False, help="Enable Docker privileged mode"),
-        ports: Optional[List[str]] = typer.Option(None, help="Port to forward from Docker"),
-        volume: Optional[List[str]] = typer.Option(None, help="Volume to mount"),
-        env: Optional[List[str]] = typer.Option(None, help="Environment variables to pass"),
+        ports: list[str] | None = typer.Option(None, help="Port to forward from Docker"),
+        volume: list[str] | None = typer.Option(None, help="Volume to mount"),
+        env: list[str] | None = typer.Option(None, help="Environment variables to pass"),
         sudo: bool = typer.Option(True, help="Enable sudo inside the container"),
         mount_host_passwd: bool = typer.Option(
             True,
@@ -297,9 +297,7 @@ def create_cli(
             + "`-u` docker option",
         ),
     ) -> None:
-        """
-        Helper function that start a container and drop the user inside a prompt or run a command
-        """
+        """Start a container for a prompt or to run a command."""
         env_config = get_env_config()
         image = __create_image(__get_image_name_value(image_name), **env_config)  # type: ignore
         image.run(
@@ -324,7 +322,7 @@ def create_cli(
         forge.delete("cmds"),  #
     )
     def prompt(*args, **kwargs) -> None:
-        """Start a docker container and drop the user inside a prompt"""
+        """Start a docker container and drop the user inside a prompt."""
         _start_docker_helper(prompt=True, cmds=[], *args, **kwargs)  # noqa: B026
 
     @typing.no_type_check
@@ -334,7 +332,7 @@ def create_cli(
         forge.delete("prompt"),  #
     )
     def run(*args, **kwargs):
-        """Run the following command inside the container"""
+        """Run the following command inside the container."""
         _start_docker_helper(False, *args, **kwargs)
 
     for name in images.keys():
@@ -357,7 +355,7 @@ def create_cli(
 
 
 def main() -> None:
-    """Helper main function"""
+    """Helper main function."""
     app = create_cli()
     app()
 

@@ -1,38 +1,26 @@
 SHELL := /bin/bash
 
-# Compile requirements
-# The below target assumes that pip-tools package has been installed
-# by the user on the host.
-.PHONY: compile-requirements
-compile-requirements: ## compile requirements from .in files to .txt files
-	pip-compile --output-file=requirements.txt requirements.in
-	pip-compile --output-file=requirements.dev.txt requirements.dev.in
+.PHONY: install check fmt test docs help
 
+install: ## create .venv and install runtime + dev + docs groups
+	uv sync --all-groups
 
-# Create virtual environment and install requirements
-venv/bin/activate: requirements.txt requirements.dev.txt ## create virtual environment and install requirements
-	python3 -m venv venv
-	source venv/bin/activate && pip install -r requirements.txt
-	source venv/bin/activate && pip install -r requirements.dev.txt
-	source venv/bin/activate && pip install -e .
+fmt: ## auto-fix lint and format
+	uv run ruff check --fix .
+	uv run ruff format .
 
-.PHONY: venv
-venv: venv/bin/activate ## create virtual environment and install requirements
+check: ## lint, format check, and type-check
+	uv run ruff check .
+	uv run ruff format --check .
+	uv run mypy src tests
 
-# Install project dependencies
-.PHONY: install
-install: venv ## install the project
-	source venv/bin/activate && pip install -e .
+test: ## run pytest with coverage
+	uv run pytest
 
-# Build documentation
-.PHONY: docs
-docs: venv ## build the documentation using mkdocs
-	source venv/bin/activate && mkdocs build
+docs: ## build MkDocs site
+	uv run mkdocs build
 
-# HELP
-
-.PHONY: help
 help:
-	@ grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 .DEFAULT_GOAL := help

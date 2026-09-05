@@ -7,8 +7,12 @@ __pycache__
 htmlcov
 *.pyc
 venv
+.venv/
 dist
 .pytest_cache
 .mypy_cache
 build
 site
+
+# Claude Code personal settings
+.claude/settings.local.json

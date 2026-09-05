@@ -1,5 +1,4 @@
-"""ubuntu_derived
-
+"""ubuntu_derived.
 
 Example of a docker image that inherits from another one, in this
 case ubuntu_base
@@ -9,7 +8,6 @@ import hashlib
 import logging
 import os
 import sys
-from typing import List
 
 import docker_wrapper
 
@@ -23,11 +21,16 @@ from ubuntu_base import docker_wrapper_extensions as parent_image  # noqa: E402
 
 
 class UbuntuDerived(docker_wrapper.DockerImage):
-    """DockerImage class of the ubuntu_derived image"""
+    """DockerImage class of the ubuntu_derived image."""
 
     NAME = "ubuntu_derived"
 
     def __init__(self, **kwargs) -> None:
+        """Initialize the ubuntu_derived image and its parent.
+
+        Args:
+            **kwargs: Extra configuration forwarded to ``DockerImage``.
+        """
         super().__init__(**kwargs)
         self.parent = parent_image.UbuntuBase()
         self.name = UbuntuDerived.NAME
@@ -37,7 +40,7 @@ class UbuntuDerived(docker_wrapper.DockerImage):
 
     @property
     def image_hash(self) -> str:
-        """Compute the hash of the derived image
+        """Compute the hash of the derived image.
 
         To capture correctly any possible changes to the
         parent image as well, the image hash is the combined
@@ -51,13 +54,13 @@ class UbuntuDerived(docker_wrapper.DockerImage):
         logging.debug(f"Parent hash: {parent_image_hash}")
         this_image_hash = self.folder_hash(self.docker_folder)
         logging.debug(f"This image hash {this_image_hash}")
-        hash_object = hashlib.sha1(
+        hash_object = hashlib.sha1(  # noqa: S324
             parent_image_hash.encode("utf8") + this_image_hash.encode("utf8")
         ).hexdigest()
         return hash_object
 
     def build_image(self, force_build: bool = False) -> None:
-        """Build the image
+        """Build the image.
 
         The derived image will trigger a build of the parent image and
         then proceed to its own build.
@@ -82,6 +85,6 @@ class UbuntuDerived(docker_wrapper.DockerImage):
         ]
         self._exec_cmd(cmd)
 
-    def get_docker_run_args(self) -> List[str]:
-        """"""
+    def get_docker_run_args(self) -> list[str]:
+        """Return extra ``docker run`` arguments for this image."""
         return ["--network", "host"]

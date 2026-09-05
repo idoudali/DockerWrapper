@@ -1,0 +1,38 @@
+---
+description: Python coding standards for docker_wrapper
+globs: "**/*.py"
+alwaysApply: false
+---
+
+# Python standards
+
+- Use `uv run` for every Python tool. Do not introduce pip, venv, or tox.
+- Keep imports at the top of the module. No inline imports unless a circular
+  dependency is documented.
+- Type-hint public APIs. Prefer `list[str]` and `str | None` over `typing.List`
+  and `Optional`.
+- Use Google-style docstrings (`Args:`, `Returns:`, `Raises:`).
+- `snake_case` functions and variables; `CamelCase` classes.
+- After edits, run `uv run ruff check --fix .`, `uv run ruff format .`, and
+  `uv run mypy src tests` as needed. Do not leave Ruff or mypy failures.
+
+```python
+# ❌ BAD
+from typing import Dict, Optional
+
+def load(name: Optional[str]) -> Dict[str, str]:
+    from docker_wrapper import cli
+    return {}
+
+# ✅ GOOD
+def load(name: str | None) -> dict[str, str]:
+    """Load repository configuration.
+
+    Args:
+        name: Environment name, or None for defaults.
+
+    Returns:
+        Mapping of configuration keys to values.
+    """
+    return {}
+```
