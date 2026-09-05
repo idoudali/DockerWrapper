@@ -1,45 +1,112 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.mypy]
-ignore_missing_imports = true
-strict = true
-# If certain strict config options are too pedantic for a project,
-# disable them selectively here by setting to false.
+[project]
+name = "docker-wrapper"
+version = "0.1.0"
+description = "Typed helpers and Typer CLI for common Docker image workflows"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE.txt"]
+requires-python = ">=3.10"
+authors = [{ name = "Ioannis Doudalis" }]
+keywords = ["docker", "cli", "typer"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+  "argcomplete",
+  "checksumdir",
+  "colorama>=0.4.0",
+  "docker",
+  "python-forge>=18.6.0",
+  "typer",
+]
 
-[tool.black]
-# Use the more relaxed max line length permitted in PEP8.
+[project.urls]
+Homepage = "https://github.com/idoudali/DockerWrapper"
+Documentation = "https://idoudali.github.io/DockerWrapper/"
+
+[project.scripts]
+docker_wrapper = "docker_wrapper.cli:main"
+
+[dependency-groups]
+dev = [
+  "commitizen",
+  "mypy",
+  "pre-commit",
+  "pytest",
+  "pytest-cov",
+  "pytest-mock",
+  "pyyaml",
+  "ruff",
+  "types-pyyaml",
+]
+docs = [
+  "mkdocs>=1.6.0",
+  "mkdocs-material",
+  "mkdocs-htmlproofer-plugin",
+  "mkdocs-simple-plugin>=3.2.0",
+  "mkdocstrings",
+  "mkdocstrings-python",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+docker_wrapper = ["py.typed"]
+
+[tool.ruff]
 line-length = 99
-target-version = ["py38", "py39", "py310"]
-# black will automatically exclude all files listed in .gitignore
-# If you need to exclude additional folders, consider using extend-exclude to avoid disabling the
-# default .gitignore behaviour.
+target-version = "py310"
+src = ["src", "tests"]
 
-[tool.isort]
-profile = "black"
-line_length = 99
-force_sort_within_sections = true
-# Inform isort of paths to import names that should be considered part of the "First Party" group.
-src_paths = ["src/docker_wrapper"]
-skip_gitignore = true
-# If you need to skip/exclude folders, consider using skip_glob as that will allow the
-# isort defaults for skip to remain without the need to duplicate them.
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S", "N", "D", "W"]
+ignore = ["D203", "D213"]  # Google convention conflicts with D211/D212
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["typer.Argument", "typer.Option"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "D"]
+"sample-images/**/*.py" = ["T201"]
+"repo-cli.py" = ["T201"]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+known-first-party = ["docker_wrapper"]
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--cov=docker_wrapper", "--cov-report=term-missing"]
 
 [tool.coverage.run]
 branch = true
+source = ["docker_wrapper"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
+version = "0.1.0"
+version_files = ["pyproject.toml:version", "src/docker_wrapper/__init__.py:__version__"]
 tag_format = "$version"
 version_scheme = "pep440"
-version = "0.0.1"
 update_changelog_on_bump = true
 major_version_zero = true
-
-
-[tool.semantic_release]
-version_variables = ["setup.py:__version__"]
-
-[tool.semantic_release.commit_parser_options]
-allowed_tags = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "style", "refactor", "test"]

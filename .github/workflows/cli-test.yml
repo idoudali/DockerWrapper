@@ -7,22 +7,15 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        python-version: [ "3.10" ]
+        python-version: ["3.10"]
     steps:
-      - uses: actions/checkout@v4.1.7
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5.1.1
-        with:
-          python-version: ${{ matrix.python-version }}
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
       - name: Install dependencies
-        run: |
-          make install
+        run: uv sync --all-groups --python ${{ matrix.python-version }}
       - name: Build docker images
         run: |
-          source venv/bin/activate \
-          && ./repo-cli.py docker build ubuntu_base \
-          && ./repo-cli.py docker build ubuntu_derived
+          uv run ./repo-cli.py docker build ubuntu_base
+          uv run ./repo-cli.py docker build ubuntu_derived
       - name: Run command
-        run: |
-          source venv/bin/activate \
-          && ./repo-cli.py docker ubuntu_base "echo 'Hello, World!'"
+        run: uv run ./repo-cli.py docker ubuntu_base "echo 'Hello, World!'"

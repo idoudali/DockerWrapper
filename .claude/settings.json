@@ -1,0 +1,6 @@
+{
+  "permissionMode": "default",
+  "env": {
+    "CLAUDE_CODE_PREVENT_AUTO_COMMIT": "1"
+  }
+}

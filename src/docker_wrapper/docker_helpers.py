@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
+"""Helpers for building, pulling, pushing, and running Docker images."""
+
 import getpass
 import logging
 import os
 from pathlib import Path
 import subprocess
 import sys
-from typing import List, Optional
 
 import checksumdir
 import docker
 
 
 class DockerImage:
-    """Class providing the necessary interface to interact with a Docker image
-    and create containers.
-    """
+    """Interface for building and running a Docker image."""
 
     NAME = "UNDEFINED"
 
@@ -33,19 +32,18 @@ class DockerImage:
         self.repo_url = docker_registry_prefix or None
 
     @staticmethod
-    def _exec_cmd(cmd: List[str]) -> None:
-        """Helper function to execute a shell command, and log it it as well
+    def _exec_cmd(cmd: list[str]) -> None:
+        """Helper function to execute a shell command, and log it it as well.
 
         Args:
             cmd (List[str]): The command and its arguments in a list format.
         """
         logging.info(" ".join(cmd))
-        subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
+        subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)  # noqa: S603
 
     @staticmethod
     def folder_hash(docker_path: str) -> str:
-        """Compute the hash  of the docker image based on the
-        contents of the Docker folder of the project
+        """Return a SHA1 hash of the Docker folder contents.
 
         Args:
             docker_path (str): Path of the Docker folder that contains the Dockerfile
@@ -58,7 +56,7 @@ class DockerImage:
 
     @property
     def image_hash(self) -> str:
-        """Return the full hash of the image
+        """Return the full hash of the image.
 
         Returns:
             str: Hash value.
@@ -67,7 +65,7 @@ class DockerImage:
 
     @property
     def image_tag(self) -> str:
-        """Return the tag of the image
+        """Return the tag of the image.
 
         If the image has an explicit numeric version return that, else
         return the first 10 characters of the image hash.
@@ -81,7 +79,7 @@ class DockerImage:
 
     @property
     def tagged_name(self) -> str:
-        """Return the tuple <IMAGE_NAME>:<IMAGE_TAG>
+        """Return the tuple <IMAGE_NAME>:<IMAGE_TAG>.
 
         Returns:
             str: String result
@@ -90,8 +88,9 @@ class DockerImage:
 
     @property
     def image_url(self) -> str:
-        """Return the full image URL, that is the
-            <REPO_URL>/<IMAGE_NAME>:<IMAGE_TAG>
+        """Return the full image URL.
+
+        Format is ``<REPO_URL>/<IMAGE_NAME>:<IMAGE_TAG>``.
 
         Returns:
             str: String result
@@ -101,12 +100,10 @@ class DockerImage:
         return f"{self.repo_url}/{self.tagged_name}"
 
     def build_image(self, force_build: bool = False) -> None:
-        """Build the Docker image if a specific version does not
-        already exist.
+        """Build the Docker image unless that version already exists.
 
         Args:
-            force_build (bool, optional): Iff True then build the image regardless
-                . Defaults to False.
+            force_build: If True, rebuild even when the tagged image exists.
         """
         image_url = self.image_url
         if self.image_exists(image_url) and not force_build:
@@ -121,7 +118,7 @@ class DockerImage:
         self._exec_cmd(cmd)
 
     def push(self) -> None:
-        """Push the image to the registry"""
+        """Push the image to the registry."""
         cmd = ["docker", "push", self.image_url]
         self._exec_cmd(cmd)
 
@@ -140,8 +137,8 @@ class DockerImage:
         except docker.errors.ImageNotFound:
             return False
 
-    def get_docker_run_args(self) -> List[str]:
-        """Return the list of additional arguments to pass to the docker run command
+    def get_docker_run_args(self) -> list[str]:
+        """Return the list of additional arguments to pass to the docker run command.
 
         This function should be overridden by the child classes to provide
         the necessary arguments.
@@ -153,23 +150,24 @@ class DockerImage:
         project_dir: Path,
         prompt: bool = False,
         mount_home: bool = False,
-        cmds: Optional[List[str]] = None,
-        network: Optional[str] = None,
+        cmds: list[str] | None = None,
+        network: str | None = None,
         privileged: bool = False,
         enable_gui: bool = False,
-        ports: Optional[List[str]] = None,
-        volumes: Optional[List[str]] = None,
-        envs: Optional[List[str]] = None,
+        ports: list[str] | None = None,
+        volumes: list[str] | None = None,
+        envs: list[str] | None = None,
         enable_sudo: bool = False,
         mount_host_passwd: bool = True,
     ) -> None:
-        """Run a container from the Docker Image
+        """Run a container from the Docker Image.
 
         Args:
             project_dir (Path): Project we want to work inside the container.
                 Mount the volume inside the container
             prompt (bool, optional): Iff true start the container in interactive mode and
                 start a prompt to provide to the user. Defaults to False.
+            mount_home: If True, mount the host home directory into the container.
             cmds (Optional[List[str]], optional): List of commands to run inside the container.
                 Defaults to None.
             network (Optional[str], optional): Name of the network to connect the container to.
@@ -180,6 +178,7 @@ class DockerImage:
             ports (Optional[List[str]], optional): List of ports to enable to open from the
                 container. Defaults to None.
             volumes (Optional[List[str]], optional): List of volumes to mount inside the container.
+            envs: Environment variables to pass to the container as KEY=VALUE strings.
             enable_sudo (bool, optional): Enable sudo inside the container. Defaults to False. This
                 option mounts the sudoers file inside the container.
             mount_host_passwd (bool, optional): Mount the host passwd related files inside the
@@ -195,7 +194,7 @@ class DockerImage:
         uid = os.getuid()
         gid = os.getgid()
         username = getpass.getuser()
-        logging.debug("uid:{}, gid:{}, username:{}".format(uid, gid, username))
+        logging.debug(f"uid:{uid}, gid:{gid}, username:{username}")
         home_dir = os.path.expanduser("~")
         cmd = ["docker"]
         cmd += ["run", "--rm", "--hostname=Docker"]
@@ -207,7 +206,7 @@ class DockerImage:
                 "-e",
                 "DISPLAY=$DISPLAY",
                 "-v",
-                "/tmp/.X11-unix:/tmp/.X11-unix",
+                "/tmp/.X11-unix:/tmp/.X11-unix",  # noqa: S108
             ]
         if volumes:
             for v in volumes:
