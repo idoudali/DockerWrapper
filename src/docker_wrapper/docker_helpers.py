@@ -33,10 +33,10 @@ class DockerImage:
 
     @staticmethod
     def _exec_cmd(cmd: list[str]) -> None:
-        """Helper function to execute a shell command, and log it it as well.
+        """Execute a shell command and log it.
 
         Args:
-            cmd (List[str]): The command and its arguments in a list format.
+            cmd (list[str]): The command and its arguments in a list format.
         """
         logging.info(" ".join(cmd))
         subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)  # noqa: S603

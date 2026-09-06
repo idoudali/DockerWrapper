@@ -190,13 +190,14 @@ def create_cli(
                 typer.Option(LoggingLevel.INFO, help="Set logging level").
         """
         # Configure the logging level of the run
-        if log_level not in _LOG_LEVEL_STRINGS:
-            message = f"invalid choice: {log_level} (choose from {_LOG_LEVEL_STRINGS})"
+        log_level_name = log_level.value
+        if log_level_name not in _LOG_LEVEL_STRINGS:
+            message = f"invalid choice: {log_level_name} (choose from {_LOG_LEVEL_STRINGS})"
             typer.echo(message)
             raise typer.Exit(code=1)
-        log_level_int = getattr(logging, log_level, logging.INFO)
+        log_level_int = getattr(logging, log_level_name, logging.INFO)
         if not isinstance(log_level_int, int):
-            message = f"invalid logging level: {log_level}"
+            message = f"invalid logging level: {log_level_name}"
             typer.echo(message)
             raise typer.Exit(code=1)
         logging.basicConfig(level=log_level_int)
