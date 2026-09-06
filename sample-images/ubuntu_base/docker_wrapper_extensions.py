@@ -6,11 +6,7 @@ import docker_wrapper
 
 
 class UbuntuBase(docker_wrapper.DockerImage):
-    """ubuntu_base docker image.
-
-    Args:
-        docker_wrapper (_type_): Parent class
-    """
+    """ubuntu_base docker image."""
 
     NAME = "ubuntu_base"
 
