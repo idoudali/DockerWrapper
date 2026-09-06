@@ -193,7 +193,7 @@ def create_cli(
         if log_level not in _LOG_LEVEL_STRINGS:
             message = f"invalid choice: {log_level} (choose from {_LOG_LEVEL_STRINGS})"
             typer.echo(message)
-            typer.Exit(code=1)
+            raise typer.Exit(code=1)
         log_level_int = getattr(logging, log_level, logging.INFO)
         if not isinstance(log_level_int, int):
             message = f"invalid logging level: {log_level}"
